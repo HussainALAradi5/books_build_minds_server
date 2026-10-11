@@ -7,7 +7,7 @@ from flask import g, request
 
 from config import app, db
 from models.User import User
-from enums.accounts.account_role import AccountRole
+from utils.access import AccessRule, all_of, has_access, owns
 from utils.responses import error
 
 
@@ -33,15 +33,16 @@ def current_user():
         return None
 
 
-def require_user(admin=False):
+def require_user(access: AccessRule | None = None, owner_param: str | None = None):
     def decorator(view):
         @wraps(view)
         def wrapper(*args, **kwargs):
             user = current_user()
             if not user:
                 return error("Authentication required", 401)
-            if admin and user.role != AccountRole.ADMIN.value:
-                return error("Administrator access required", 403)
+            rule = all_of(access, owns(kwargs[owner_param])) if access and owner_param else access
+            if rule and not has_access(user, rule):
+                return error("Access denied", 403)
             g.user = user
             return view(*args, **kwargs)
         return wrapper

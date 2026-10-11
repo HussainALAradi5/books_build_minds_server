@@ -9,3 +9,4 @@ from . import LibraryActivity
 from . import Country
 from . import Author
 from . import Publisher
+from .access import AccessPermission, AccessRole, AccessGroup  # noqa: F401

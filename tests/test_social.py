@@ -16,6 +16,8 @@ from models.reviews.Review import Review  # noqa: E402
 from models.Country import Country  # noqa: E402
 from models.User import User  # noqa: E402
 from enums.accounts.account_role import AccountRole  # noqa: E402
+from enums.accounts.permission import Permission  # noqa: E402
+from utils.access import all_of, any_of, has_access, owns  # noqa: E402
 from utils.security import create_token  # noqa: E402
 
 
@@ -109,6 +111,35 @@ class SocialTests(unittest.TestCase):
         db.session.commit()
         response = self.client.put("/api/book/a-book", headers=self.headers(self.other), json={"title": "Changed"})
         self.assertEqual(response.status_code, 403)
+
+    def test_admin_can_assign_group_permissions_and_expressions(self):
+        admin_headers = self.headers(self.admin)
+        self.assertEqual(self.client.get("/api/access/roles", headers=self.headers(self.reader)).status_code, 403)
+        permission = self.client.post("/api/access/permissions", headers=admin_headers,
+                                      json={"key": Permission.BOOK_EDIT_ANY.value, "label": "Edit books"})
+        self.assertEqual(permission.status_code, 201)
+        access_permission = self.client.post("/api/access/permissions", headers=admin_headers,
+                                             json={"key": Permission.ACCESS_READ_ANY.value, "label": "Read access"})
+        self.assertEqual(access_permission.status_code, 201)
+        role = self.client.post("/api/access/roles", headers=admin_headers,
+                                json={"key": "catalog-editor", "name": "Catalog editor",
+                                      "permission_keys": [Permission.BOOK_EDIT_ANY.value, Permission.ACCESS_READ_ANY.value]})
+        self.assertEqual(role.status_code, 201)
+        group = self.client.post("/api/access/groups", headers=admin_headers,
+                                 json={"name": "Editors", "role_keys": ["catalog-editor"]})
+        self.assertEqual(group.status_code, 201)
+        assignment = self.client.put(f"/api/access/users/{self.other.user_id}", headers=admin_headers,
+                                     json={"role": AccountRole.EMPLOYEE.value, "access_role_keys": [],
+                                           "group_ids": [group.json["group"]["group_id"]]})
+        self.assertEqual(assignment.status_code, 200)
+        self.assertTrue(has_access(self.other, any_of(Permission.BOOK_EDIT_ANY, owns(-1))))
+        self.assertFalse(has_access(self.other, all_of(Permission.BOOK_EDIT_ANY, owns(-1))))
+        self.assertEqual(self.client.put("/api/book/a-book", headers=self.headers(self.other),
+                                         json={"title": "Edited by group"}).status_code, 200)
+        self.assertEqual(self.client.get("/api/access/roles", headers=self.headers(self.other)).status_code, 403)
+        self.assertEqual(self.client.put(f"/api/access/users/{self.admin.user_id}", headers=admin_headers,
+                                         json={"role": AccountRole.CLIENT.value, "access_role_keys": [],
+                                               "group_ids": []}).status_code, 403)
 
     def test_book_socket_room_receives_review_change(self):
         socket_client = socketio.test_client(app)

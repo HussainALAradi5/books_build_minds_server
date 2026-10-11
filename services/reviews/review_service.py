@@ -6,7 +6,9 @@ from flask import g, jsonify, request
 from config import db
 from dto.reviews.review_input_dto import ReviewInputDTO
 from dto.reviews.review_update_dto import ReviewUpdateDTO
+from enums.accounts.permission import Permission
 from models.reviews.Review import Review
+from utils.access import all_of, any_of, has_access, owns, purchased
 from utils.book_events import emit_book_changed
 from utils.book_lookup import visible_book
 from utils.pagination import order_query, page_options, paginate
@@ -55,7 +57,7 @@ def add_review(slug):
     book = visible_book(slug)
     if not book:
         return error("Book not found", 404)
-    if book not in g.user.purchased_books:
+    if not has_access(g.user, all_of(Permission.REVIEW_WRITE_ONE, purchased(book.book_id))):
         return error("Purchase this book before reviewing it", 403)
     existing = Review.query.filter_by(
         user_id=g.user.user_id, book_id=book.book_id, is_deleted=False, is_archived=False
@@ -78,17 +80,18 @@ def add_review(slug):
     return success("Review added", 201, review=review.to_dict())
 
 
-def owned_review(slug, review_id):
+def owned_review(slug, review_id, own_permission: Permission, any_permission: Permission):
     review = db.session.get(Review, review_id)
     if not review or review.book.slug != slug or review.is_deleted or review.is_archived:
         return None, error("Review not found for this book", 404)
-    if review.user_id != g.user.user_id and not g.user.is_admin:
+    rule = any_of(any_permission, all_of(own_permission, owns(review.user_id)))
+    if not has_access(g.user, rule):
         return None, error("Only the author or an administrator may change this review", 403)
     return review, None
 
 
 def edit_review(slug, review_id):
-    review, failure = owned_review(slug, review_id)
+    review, failure = owned_review(slug, review_id, Permission.REVIEW_EDIT_OWN, Permission.REVIEW_EDIT_ANY)
     if failure:
         return failure
     data: ReviewUpdateDTO = json_body()
@@ -111,7 +114,7 @@ def edit_review(slug, review_id):
 
 
 def delete_review(slug, review_id):
-    review, failure = owned_review(slug, review_id)
+    review, failure = owned_review(slug, review_id, Permission.REVIEW_DELETE_OWN, Permission.REVIEW_DELETE_ANY)
     if failure:
         return failure
     review.is_deleted = True

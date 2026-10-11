@@ -7,6 +7,7 @@ class UserDTO(BaseEntityDTO):
     email: str
     is_active: bool
     role: str
+    permissions: list[str]
     purchased_books: list[int]
     receipts: list[ReceiptDTO]
     profile_picture_url: str | None

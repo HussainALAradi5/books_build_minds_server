@@ -13,9 +13,10 @@ from controllers.loans import loans
 from controllers.reviews.routes import reviews
 from controllers.receipts.routes import receipts
 from controllers.catalog import catalog
+from controllers.access.routes import access
 import models  # noqa: F401 - registers SQLAlchemy models for migrations
 
-for blueprint in (account, books, reviews, receipts, catalog, media, loans):
+for blueprint in (account, books, reviews, receipts, catalog, media, loans, access):
     app.register_blueprint(blueprint, url_prefix="/api")
 
 
