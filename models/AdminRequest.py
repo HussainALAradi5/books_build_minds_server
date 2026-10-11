@@ -3,10 +3,11 @@ from sqlalchemy import Boolean, Column, Date, ForeignKey, Integer, Text
 from sqlalchemy.orm import relationship
 
 from config import db
-from dto import AdminRequestDTO
+from models.BaseEntity import BaseEntity
+from dto.accounts.admin_request_dto import AdminRequestDTO
 
 
-class AdminRequest(db.Model):
+class AdminRequest(BaseEntity, db.Model):
     __tablename__ = "admin_request"
 
     request_id = Column(Integer, primary_key=True, autoincrement=True)
@@ -27,4 +28,5 @@ class AdminRequest(db.Model):
             "reviewed_by_user_id": self.reviewed_by_user_id,
             "reason_for_request": self.reason_for_request,
             "requester_id": self.requester_id,
+            **self.entity_dict(),
         }

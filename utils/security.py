@@ -7,6 +7,7 @@ from flask import g, request
 
 from config import app, db
 from models.User import User
+from enums.accounts.account_role import AccountRole
 from utils.responses import error
 
 
@@ -27,7 +28,7 @@ def current_user():
         payload = jwt.decode(token, app.config["JWT_SECRET_KEY"], algorithms=["HS256"])
         user_id = int(payload["sub"])
         user = db.session.get(User, user_id)
-        return user if user and user.is_active else None
+        return user if user and user.is_active and not user.is_deleted and not user.is_archived else None
     except (jwt.PyJWTError, KeyError, TypeError, ValueError):
         return None
 
@@ -39,7 +40,7 @@ def require_user(admin=False):
             user = current_user()
             if not user:
                 return error("Authentication required", 401)
-            if admin and not user.is_admin:
+            if admin and user.role != AccountRole.ADMIN.value:
                 return error("Administrator access required", 403)
             g.user = user
             return view(*args, **kwargs)

@@ -3,10 +3,11 @@ from sqlalchemy import Column, Date, ForeignKey, Integer, UniqueConstraint
 from sqlalchemy.orm import relationship
 
 from config import db
-from dto import ReceiptDTO
+from models.BaseEntity import BaseEntity
+from dto.receipts.receipt_dto import ReceiptDTO
 
 
-class Receipt(db.Model):
+class Receipt(BaseEntity, db.Model):
     __tablename__ = "receipt"
     __table_args__ = (UniqueConstraint("user_id", "book_id", name="uq_receipt_user_book"),)
 
@@ -22,4 +23,5 @@ class Receipt(db.Model):
             "user_id": self.user_id,
             "book_id": self.book_id,
             "written_time": self.written_time.isoformat(),
+            **self.entity_dict(),
         }

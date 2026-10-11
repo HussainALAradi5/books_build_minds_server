@@ -5,11 +5,12 @@ from sqlalchemy import Column, DateTime, ForeignKey, Integer, String
 from sqlalchemy.orm import relationship
 
 from config import db
-from dto import MediaDTO
-from enums import MediaType
+from models.BaseEntity import BaseEntity
+from dto.media.media_dto import MediaDTO
+from enums.media.media_type import MediaType
 
 
-class Media(db.Model):
+class Media(BaseEntity, db.Model):
     __tablename__ = "media"
 
     media_id = Column(Integer, primary_key=True, autoincrement=True)
@@ -39,4 +40,5 @@ class Media(db.Model):
             "size_bytes": self.size_bytes,
             "uploaded_at": self.uploaded_at.isoformat(),
             "url": f"/static/media/{self.filename}",
+            **self.entity_dict(),
         }

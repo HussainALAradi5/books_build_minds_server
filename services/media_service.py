@@ -8,10 +8,10 @@ from PIL import Image, UnidentifiedImageError
 from werkzeug.utils import secure_filename
 
 from config import BASE_DIR, db
-from enums import MediaType
+from enums.media.media_type import MediaType
 from models.Book import Book
 from models.Media import Media
-from utils.pagination import page_options, paginate
+from utils.pagination import page_options, paginate, order_query
 from utils.responses import error, success
 
 MEDIA_DIR = BASE_DIR / "static" / "media"
@@ -21,11 +21,13 @@ SUPPORTED = {"JPEG": ("jpg", "image/jpeg"), "PNG": ("png", "image/png"), "GIF": 
 
 
 def list_media(book_id):
-    if not db.session.get(Book, book_id):
+    book = db.session.get(Book, book_id)
+    if not book or book.is_deleted or book.is_archived:
         return error("Book not found", 404)
     try:
-        query = Media.query.filter_by(book_id=book_id).order_by(Media.media_id.desc())
-        return jsonify(paginate(query, lambda item: item.to_dict(), page_options()))
+        options = page_options()
+        query = Media.query.filter_by(book_id=book_id, is_deleted=False, is_archived=False)
+        return jsonify(paginate(order_query(query, Media.media_id, options), lambda item: item.to_dict(), options))
     except ValueError as exc:
         return error(str(exc))
 
@@ -48,7 +50,7 @@ def validate_file(file):
 
 def upload_media(book_id):
     book = db.session.get(Book, book_id)
-    if not book:
+    if not book or book.is_deleted or book.is_archived:
         return error("Book not found", 404)
     files = request.files.getlist("files")
     if not 1 <= len(files) <= MAX_FILES:

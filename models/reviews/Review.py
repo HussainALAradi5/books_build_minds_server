@@ -1,14 +1,21 @@
 """Purchase-gated book review model."""
-from sqlalchemy import Column, Date, Float, ForeignKey, Integer, Text, UniqueConstraint
+from sqlalchemy import Column, Date, Float, ForeignKey, Index, Integer, Text, text
 from sqlalchemy.orm import relationship
 
 from config import db
-from dto import ReviewDTO
+from dto.reviews.review_dto import ReviewDTO
+from models.BaseEntity import BaseEntity
 
 
-class Review(db.Model):
+class Review(BaseEntity, db.Model):
     __tablename__ = "review"
-    __table_args__ = (UniqueConstraint("user_id", "book_id", name="uq_review_user_book"),)
+    __table_args__ = (
+        Index(
+            "uq_review_active_user_book", "user_id", "book_id", unique=True,
+            sqlite_where=text("is_deleted = 0 AND is_archived = 0"),
+            postgresql_where=text("is_deleted = false AND is_archived = false"),
+        ),
+    )
 
     review_id = Column(Integer, primary_key=True, autoincrement=True)
     user_id = Column(Integer, ForeignKey("user.user_id"), nullable=False)
@@ -17,6 +24,7 @@ class Review(db.Model):
     last_edit = Column(Date)
     rating = Column(Float, nullable=False)
     comment = Column(Text, nullable=False)
+    description = Column(Text, nullable=False, default="", server_default="")
 
     user = relationship("User", backref="reviews")
     book = relationship("Book", back_populates="reviews")
@@ -28,7 +36,9 @@ class Review(db.Model):
             "user_name": self.user.user_name,
             "book_id": self.book_id,
             "comment": self.comment,
+            "description": self.description,
             "written_time": self.written_time.isoformat(),
             "last_edit": self.last_edit.isoformat() if self.last_edit else None,
             "rating": self.rating,
+            **self.entity_dict(),
         }

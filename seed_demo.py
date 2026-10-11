@@ -8,6 +8,7 @@ from flask.cli import with_appcontext
 from werkzeug.security import generate_password_hash
 
 from config import app, db
+from enums.accounts.account_role import AccountRole
 from models.Book import Book
 from models.User import User
 
@@ -22,18 +23,35 @@ BOOKS = [
 
 
 @click.command("seed-demo")
+@click.option("--reset-passwords", is_flag=True, help="Generate new passwords for active demo accounts.")
 @with_appcontext
-def seed_demo():
+def seed_demo(reset_passwords: bool):
     if os.getenv("APP_ENV") == "production":
         raise click.ClickException("Demo data cannot be seeded in production")
     db.create_all()
-    admin = User.query.filter_by(email="demo-admin@example.test").first()
-    if not admin:
+    demo_accounts = (
+        ("demo_admin", AccountRole.ADMIN, True),
+        ("demo_employee", AccountRole.EMPLOYEE, True),
+        ("demo_client", AccountRole.CLIENT, True),
+        ("demo_visitor", AccountRole.VISITOR, False),
+    )
+    for username, role, active in demo_accounts:
+        email = f"{username.replace('_', '-')}@example.test"
+        user = User.query.filter_by(email=email).first()
+        if user and not reset_passwords:
+            continue
         password = secrets.token_urlsafe(18)
-        admin = User(user_name="demo_admin", email="demo-admin@example.test", password_digest=generate_password_hash(password), is_admin=True, is_active=True)
-        db.session.add(admin)
-        db.session.flush()
-        click.echo(f"Demo admin: demo_admin / {password}")
+        if user:
+            user.password_digest = generate_password_hash(password)
+            user.role = role.value
+            user.is_active = active
+        else:
+            user = User(user_name=username, email=email, password_digest=generate_password_hash(password),
+                        role=role.value, is_active=active)
+            db.session.add(user)
+        click.echo(f"Demo {role.value}: {username} / {password}" if active else f"Demo visitor: {username} (inactive)")
+    db.session.flush()
+    admin = User.query.filter_by(email="demo-admin@example.test").one()
     for title, isbn, author, publisher, published, price in BOOKS:
         if Book.query.filter_by(isbn=isbn).first():
             continue

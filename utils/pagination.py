@@ -2,12 +2,14 @@
 from dataclasses import dataclass
 
 from flask import request
+from enums.shared.sort_direction import SortDirection
 
 
 @dataclass(frozen=True)
 class PageOptions:
     page: int
     per_page: int
+    sort_direction: SortDirection
 
 
 def page_options(default_size=12, max_size=50):
@@ -21,11 +23,22 @@ def page_options(default_size=12, max_size=50):
             raise ValueError(f"{name} must be a positive integer")
         return value
 
+    direction = request.args.get("sort_direction", SortDirection.DESC.value)
+    if direction not in {item.value for item in SortDirection}:
+        raise ValueError("sort_direction must be asc or desc")
     return PageOptions(
         page=positive_int("page", 1),
         per_page=min(positive_int("per_page", default_size), max_size),
+        sort_direction=SortDirection(direction),
     )
 
+
+def order_query(query, column, options, tie_breaker=None):
+    order = column.asc() if options.sort_direction == SortDirection.ASC else column.desc()
+    if tie_breaker is not None and tie_breaker is not column:
+        tie = tie_breaker.asc() if options.sort_direction == SortDirection.ASC else tie_breaker.desc()
+        return query.order_by(order, tie)
+    return query.order_by(order)
 
 def paginate(query, serializer, options=None):
     options = options or page_options()

@@ -15,11 +15,12 @@ os.environ["JWT_SECRET_KEY"] = "test-only-secret-long-enough-for-hs256"
 from app import app  # noqa: E402
 from config import db  # noqa: E402
 from models.Book import Book  # noqa: E402
-from models.Review import Review  # noqa: E402
+from models.reviews.Review import Review  # noqa: E402
 from models.User import User  # noqa: E402
 from models.Media import Media  # noqa: E402
 from models.Loan import Loan  # noqa: E402
-from enums import MediaType  # noqa: E402
+from models.LibraryActivity import LibraryActivity  # noqa: E402
+from enums.media.media_type import MediaType  # noqa: E402
 from werkzeug.security import generate_password_hash  # noqa: E402
 from utils.security import create_token  # noqa: E402
 from services import media_service  # noqa: E402
@@ -125,6 +126,32 @@ class SecurityTests(unittest.TestCase):
         self.assertEqual(returned.json["loan"]["status"], "returned")
         self.assertEqual(self.client.get("/api/book/one-book").json["available_copies"], 1)
         self.assertEqual(Loan.query.count(), 1)
+
+    def test_admin_access_is_reviewed_through_account_api(self):
+        submitted = self.client.post("/api/admin-requests", headers=self.headers,
+                                     json={"reason_for_request": "I can manage the library catalog."})
+        self.assertEqual(submitted.status_code, 201)
+        request_id = submitted.json["request"]["request_id"]
+        self.assertEqual(self.client.get("/api/admin-requests", headers=self.headers).status_code, 403)
+        self.other.is_admin = True
+        db.session.commit()
+        admin_headers = {"Authorization": f"Bearer {create_token(self.other)}"}
+        self.assertEqual(self.client.get("/api/admin-requests?status=pending", headers=admin_headers).json["pagination"]["total"], 1)
+        reviewed = self.client.patch(f"/api/admin-requests/{request_id}", headers=admin_headers,
+                                     json={"is_accepted": True})
+        self.assertEqual(reviewed.status_code, 200)
+        self.assertTrue(db.session.get(User, self.user.user_id).is_admin)
+
+    def test_condition_and_action_history_are_typed(self):
+        self.assertEqual(self.client.get("/api/book/one-book").json["condition"], "good")
+        self.assertEqual(self.client.post("/api/book/one-book/borrow", headers=self.headers).status_code, 201)
+        self.assertEqual(self.client.post("/api/book/one-book/return", headers=self.headers).status_code, 200)
+        self.assertEqual(self.client.post("/api/book/one-book/purchase", headers=self.headers).status_code, 200)
+        listing = self.client.get(f"/api/profile/{self.user.user_id}/activities?action=borrow", headers=self.headers)
+        self.assertEqual(listing.json["pagination"]["total"], 1)
+        self.assertEqual(listing.json["items"][0]["action_type"], "borrow")
+        self.assertEqual(LibraryActivity.query.count(), 4)
+        self.assertEqual(self.client.get(f"/api/profile/{self.other.user_id}/activities", headers=self.headers).status_code, 403)
 
 
 if __name__ == "__main__":

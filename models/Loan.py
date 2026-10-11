@@ -1,15 +1,17 @@
 """A borrow transaction with an explicit return date."""
 from datetime import datetime, timezone
 
-from sqlalchemy import Column, DateTime, ForeignKey, Integer
+from sqlalchemy import Column, DateTime, Float, ForeignKey, Integer, String
 from sqlalchemy.orm import relationship
 
 from config import db
-from dto import LoanDTO
-from enums import LoanStatus
+from models.BaseEntity import BaseEntity
+from dto.library.loan_dto import LoanDTO
+from enums.library.loan_status import LoanStatus
+from enums.library.loan_kind import LoanKind
 
 
-class Loan(db.Model):
+class Loan(BaseEntity, db.Model):
     __tablename__ = "loan"
 
     loan_id = Column(Integer, primary_key=True, autoincrement=True)
@@ -18,6 +20,8 @@ class Loan(db.Model):
     borrowed_at = Column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
     due_at = Column(DateTime(timezone=True), nullable=False)
     returned_at = Column(DateTime(timezone=True))
+    loan_kind = Column(String(16), nullable=False, default=LoanKind.BORROW.value)
+    rental_fee = Column(Float, nullable=False, default=0)
 
     user = relationship("User", back_populates="loans")
     book = relationship("Book", back_populates="loans")
@@ -41,4 +45,7 @@ class Loan(db.Model):
             "due_at": self.due_at.isoformat(),
             "returned_at": self.returned_at.isoformat() if self.returned_at else None,
             "status": self.status.value,
+            "loan_kind": self.loan_kind,
+            "rental_fee": self.rental_fee,
+            **self.entity_dict(),
         }
