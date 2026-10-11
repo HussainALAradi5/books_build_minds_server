@@ -2,19 +2,41 @@
 
 This is the **server** repository for Books Builds Minds. The matching [client repository](../client/README.md) is a Next.js and Chakra UI application. The separate [documentation repository](../documentation/README.md) maps service signatures, business rules, endpoints, and errors. These links work when the repositories are sibling folders.
 
+## Related repositories
+
+| Repository | Local link | What it contains |
+| --- | --- | --- |
+| Server | This repository | Flask API, models, migrations, services, and tests |
+| Client | [Open client repository](../client/README.md) | Next.js application and workflow screenshots |
+| Documentation | [Open documentation repository](../documentation/README.md) | Architecture, setup, service signatures, endpoints, and errors |
+
+These folders are separate Git repositories. Their local links require a sibling checkout; GitHub URLs can be added after the remote repositories are created.
+
 ## Setup with PostgreSQL and pgAdmin
 
-Create a PostgreSQL database named `books_builds_minds` in pgAdmin. Copy `.env.example` to `.env` and configure `DATABASE_URL`, a long `JWT_SECRET_KEY`, and `CLIENT_ORIGINS`. Keep `.env` out of Git.
+1. Create a PostgreSQL database named `books_builds_minds` in pgAdmin.
+2. Copy `.env.example` to `.env`; configure `DATABASE_URL`, a long `JWT_SECRET_KEY`, and `CLIENT_ORIGINS`. Keep `.env` out of Git.
+3. Install Python dependencies, migrate, create the documented local test accounts, and start the API:
 
-```powershell
-py -3.12 -m venv .venv
-.\.venv\Scripts\python.exe -m pip install -r requirements.txt
-.\.venv\Scripts\flask.exe --app app db upgrade
-.\.venv\Scripts\flask.exe --app app seed-demo
-.\.venv\Scripts\python.exe app.py
-```
+   ```powershell
+   py -3.12 -m venv .venv
+   .\.venv\Scripts\python.exe -m pip install -r requirements.txt
+   .\.venv\Scripts\python.exe -m flask --app app db upgrade
+   .\.venv\Scripts\python.exe -m flask --app app seed-demo --test-accounts
+   .\.venv\Scripts\python.exe app.py
+   ```
 
-Use the migration command on a new or existing database; back up an existing database first. `seed-demo` creates the sample catalog and demo accounts, generating account passwords in the command output. `seed-demo --reset-passwords` regenerates them. The client reads all demo data from this API.
+4. Follow the [client setup](../client/README.md) to point Next.js at this API and sign in.
+
+Use the migration command on a new or existing database; back up an existing database first. `seed-demo --test-accounts` creates or updates the three active demo logins below, while `seed-demo` alone generates random passwords for new users. `seed-demo --reset-passwords` regenerates random passwords. Demo seeding is refused when `APP_ENV=production`. The client reads all demo data from this API.
+
+| Role | Username | Password | Default access |
+| --- | --- | --- | --- |
+| Administrator | `demo_admin` | `LibraryAdmin2026!` | All management operations and member workflows |
+| Employee | `demo_employee` | `LibraryStaff2026!` | Member workflows; no admin page by default |
+| Client | `demo_client` | `LibraryReader2026!` | Own profile, borrow/rent/return, purchase/receipt, and purchased-book reviews |
+
+`demo_visitor` is an inactive record; an anonymous visitor can browse and register. Employee and client start with the same member permissions. An administrator may assign extra access roles and groups; the access management page and API still require the administrator account role.
 
 ## Structure and behavior
 

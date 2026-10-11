@@ -21,11 +21,18 @@ BOOKS = [
     ("Sapiens", "9780062316097", "Yuval Noah Harari", "Harper", date(2015, 2, 10), 10.20),
 ]
 
+TEST_PASSWORDS = {
+    "demo_admin": "LibraryAdmin2026!",
+    "demo_employee": "LibraryStaff2026!",
+    "demo_client": "LibraryReader2026!",
+}
+
 
 @click.command("seed-demo")
 @click.option("--reset-passwords", is_flag=True, help="Generate new passwords for active demo accounts.")
+@click.option("--test-accounts", is_flag=True, help="Set the documented local test account passwords.")
 @with_appcontext
-def seed_demo(reset_passwords: bool):
+def seed_demo(reset_passwords: bool, test_accounts: bool):
     if os.getenv("APP_ENV") == "production":
         raise click.ClickException("Demo data cannot be seeded in production")
     db.create_all()
@@ -38,13 +45,18 @@ def seed_demo(reset_passwords: bool):
     for username, role, active in demo_accounts:
         email = f"{username.replace('_', '-')}@example.test"
         user = User.query.filter_by(email=email).first()
-        if user and not reset_passwords:
+        if user and not (reset_passwords or test_accounts):
             continue
-        password = secrets.token_urlsafe(18)
+        password = TEST_PASSWORDS.get(username) if test_accounts else secrets.token_urlsafe(18)
+        if password is None:
+            password = secrets.token_urlsafe(18)
         if user:
             user.password_digest = generate_password_hash(password)
             user.role = role.value
             user.is_active = active
+            if test_accounts:
+                user.access_roles = []
+                user.access_groups = []
         else:
             user = User(user_name=username, email=email, password_digest=generate_password_hash(password),
                         role=role.value, is_active=active)

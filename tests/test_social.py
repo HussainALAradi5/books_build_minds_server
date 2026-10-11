@@ -19,6 +19,7 @@ from enums.accounts.account_role import AccountRole  # noqa: E402
 from enums.accounts.permission import Permission  # noqa: E402
 from utils.access import all_of, any_of, has_access, owns  # noqa: E402
 from utils.security import create_token  # noqa: E402
+from seed_demo import TEST_PASSWORDS  # noqa: E402
 
 
 class SocialTests(unittest.TestCase):
@@ -44,6 +45,20 @@ class SocialTests(unittest.TestCase):
 
     def headers(self, user):
         return {"Authorization": f"Bearer {create_token(user)}"}
+
+    def test_documented_demo_accounts_login_with_expected_roles(self):
+        result = app.test_cli_runner().invoke(args=["seed-demo", "--test-accounts"])
+        self.assertEqual(result.exit_code, 0, result.output)
+        for username, role in (("demo_admin", AccountRole.ADMIN),
+                               ("demo_employee", AccountRole.EMPLOYEE),
+                               ("demo_client", AccountRole.CLIENT)):
+            response = self.client.post("/api/login", json={
+                "user_name_or_email": username, "password": TEST_PASSWORDS[username],
+            })
+            self.assertEqual(response.status_code, 200, username)
+            self.assertEqual(User.query.filter_by(user_name=username).one().role, role)
+        visitor = User.query.filter_by(user_name="demo_visitor").one()
+        self.assertFalse(visitor.is_active)
 
     def test_only_purchaser_can_review_and_owner_or_admin_can_manage(self):
         review_path = "/api/book/a-book/review"
