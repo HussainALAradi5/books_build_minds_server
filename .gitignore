@@ -1,0 +1,10 @@
+.env
+.venv*/
+.deps/
+.pip-temp/
+__pycache__/
+*.pyc
+*.db
+*.db-*
+static/media/*
+!static/media/.gitkeep

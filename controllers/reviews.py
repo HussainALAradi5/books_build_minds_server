@@ -1,0 +1,9 @@
+from flask import Blueprint
+from services import review_service
+from utils.security import require_user
+
+reviews = Blueprint("reviews", __name__)
+reviews.add_url_rule("/book/<string:slug>/review", view_func=review_service.list_reviews, methods=["GET"])
+reviews.add_url_rule("/book/<string:slug>/review", view_func=require_user()(review_service.add_review), methods=["POST"])
+reviews.add_url_rule("/book/<string:slug>/review/<int:review_id>", view_func=require_user()(review_service.edit_review), methods=["PUT"])
+reviews.add_url_rule("/book/<string:slug>/review/<int:review_id>", view_func=require_user()(review_service.delete_review), methods=["DELETE"])
