@@ -7,8 +7,9 @@ from config import db
 from dto.reviews.review_input_dto import ReviewInputDTO
 from dto.reviews.review_update_dto import ReviewUpdateDTO
 from enums.accounts.permission import Permission
+from enums.accounts.account_role import AccountRole
 from models.reviews.Review import Review
-from utils.access import all_of, any_of, has_access, owns, purchased
+from utils.access import all_of, any_of, has_access, has_role, owns, purchased
 from utils.book_events import emit_book_changed
 from utils.book_lookup import visible_book
 from utils.pagination import order_query, page_options, paginate
@@ -84,7 +85,8 @@ def owned_review(slug, review_id, own_permission: Permission, any_permission: Pe
     review = db.session.get(Review, review_id)
     if not review or review.book.slug != slug or review.is_deleted or review.is_archived:
         return None, error("Review not found for this book", 404)
-    rule = any_of(any_permission, all_of(own_permission, owns(review.user_id)))
+    rule = any_of(all_of(has_role(AccountRole.ADMIN), any_permission),
+                  all_of(own_permission, owns(review.user_id)))
     if not has_access(g.user, rule):
         return None, error("Only the author or an administrator may change this review", 403)
     return review, None

@@ -150,11 +150,45 @@ class SocialTests(unittest.TestCase):
         self.assertTrue(has_access(self.other, any_of(Permission.BOOK_EDIT_ANY, owns(-1))))
         self.assertFalse(has_access(self.other, all_of(Permission.BOOK_EDIT_ANY, owns(-1))))
         self.assertEqual(self.client.put("/api/book/a-book", headers=self.headers(self.other),
-                                         json={"title": "Edited by group"}).status_code, 200)
+                                         json={"title": "Edited by group"}).status_code, 403)
         self.assertEqual(self.client.get("/api/access/roles", headers=self.headers(self.other)).status_code, 403)
         self.assertEqual(self.client.put(f"/api/access/users/{self.admin.user_id}", headers=admin_headers,
                                          json={"role": AccountRole.CLIENT.value, "access_role_keys": [],
                                                "group_ids": []}).status_code, 403)
+
+    def test_delegated_permissions_cannot_bypass_admin_or_review_ownership(self):
+        admin_headers = self.headers(self.admin)
+        permissions = [Permission.BOOK_WRITE_ONE, Permission.BOOK_EDIT_ANY,
+                       Permission.BOOK_DELETE_ANY, Permission.BOOK_IMPORT,
+                       Permission.BOOK_BULK_EDIT, Permission.BOOK_MEDIA_WRITE,
+                       Permission.REVIEW_EDIT_ANY, Permission.REVIEW_DELETE_ANY]
+        for permission in permissions:
+            response = self.client.post("/api/access/permissions", headers=admin_headers,
+                                        json={"key": permission.value, "label": permission.value})
+            self.assertEqual(response.status_code, 201)
+        role = self.client.post("/api/access/roles", headers=admin_headers,
+                                json={"key": "delegated-writer", "name": "Delegated writer",
+                                      "permission_keys": [item.value for item in permissions]})
+        self.assertEqual(role.status_code, 201)
+        assigned = self.client.put(f"/api/access/users/{self.other.user_id}", headers=admin_headers,
+                                   json={"role": AccountRole.EMPLOYEE.value,
+                                         "access_role_keys": ["delegated-writer"], "group_ids": []})
+        self.assertEqual(assigned.status_code, 200)
+        headers = self.headers(self.other)
+        for method, path in [("post", "/api/book"), ("put", "/api/book/a-book"),
+                             ("delete", "/api/book/a-book"), ("post", "/api/book/import"),
+                             ("post", "/api/book/bulk"), ("post", f"/api/media/books/{self.book.book_id}")]:
+            with self.subTest(path=path, method=method):
+                self.assertEqual(getattr(self.client, method)(path, headers=headers, json={}).status_code, 403)
+        self.client.post("/api/book/a-book/purchase", headers=self.headers(self.reader))
+        review = self.client.post("/api/book/a-book/review", headers=self.headers(self.reader),
+                                  json={"rating": 4, "comment": "A thoughtful reader review"})
+        self.assertEqual(review.status_code, 201)
+        path = f"/api/book/a-book/review/{review.json['review']['review_id']}"
+        self.assertEqual(self.client.put(path, headers=headers, json={"rating": 1}).status_code, 403)
+        self.assertEqual(self.client.delete(path, headers=headers).status_code, 403)
+        self.assertEqual(self.client.put(path, headers=admin_headers, json={"rating": 5}).status_code, 200)
+        self.assertEqual(self.client.delete(path, headers=self.headers(self.reader)).status_code, 200)
 
     def test_book_socket_room_receives_review_change(self):
         socket_client = socketio.test_client(app)

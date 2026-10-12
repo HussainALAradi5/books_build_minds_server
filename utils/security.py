@@ -7,7 +7,8 @@ from flask import g, request
 
 from config import app, db
 from models.User import User
-from utils.access import AccessRule, all_of, has_access, owns
+from utils.access import AccessRule, all_of, has_access, has_role, owns
+from enums.accounts.account_role import AccountRole
 from utils.responses import error
 
 
@@ -47,3 +48,8 @@ def require_user(access: AccessRule | None = None, owner_param: str | None = Non
             return view(*args, **kwargs)
         return wrapper
     return decorator
+
+
+def require_admin(access: AccessRule):
+    """Require the administrator account role as well as the action permission."""
+    return require_user(all_of(has_role(AccountRole.ADMIN), access))
