@@ -67,3 +67,7 @@ See [ordered migrations](https://github.com/HussainALAradi5/books_build_minds_do
 ## Security
 
 Book changes require the administrator account role as well as an action permission. Reviews may be changed only by their author or an administrator with the required permission. Delegated permissions cannot bypass those restrictions. Read the [security controls, test coverage, and deployment requirements](https://github.com/HussainALAradi5/books_build_minds_documentation/blob/main/security/README.md) before exposing a live service.
+
+## Book printing
+
+Public `GET /api/book/<slug>/print` downloads a book record with QR and Code 128 codes. `GET /api/book/<slug>/codes` returns the generated code images. Configure `PUBLIC_CLIENT_URL` to the browser-facing client URL before printing labels. Catalog search accepts the printed `BBM-` identifier. See [printing documentation](https://github.com/HussainALAradi5/books_build_minds_documentation/blob/main/features/books/printing/README.md).

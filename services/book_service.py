@@ -18,6 +18,7 @@ from enums.books.book_status import BookStatus
 from enums.library.library_action_type import LibraryActionType
 from utils.book_events import emit_book_changed
 from utils.book_lookup import visible_book
+from utils.printing.book_codes import parse_barcode
 from utils.book_input import normalize_book_input, resolve_catalog_people
 from services.receipts.receipt_service import create_purchase_receipt
 from utils.tabular import export_table, import_table
@@ -30,7 +31,7 @@ def filtered_books(options, include_archived=False):
     term = clean_text(request.args.get("q"), 120)
     if term:
         needle = f"%{term}%"
-        query = query.filter(or_(Book.title.ilike(needle), Book.author.ilike(needle), Book.publisher.ilike(needle), Book.isbn.ilike(needle)))
+        query = query.filter(or_(Book.book_id == parse_barcode(term), Book.title.ilike(needle), Book.author.ilike(needle), Book.publisher.ilike(needle), Book.isbn.ilike(needle)))
     publisher = clean_text(request.args.get("publisher"), 120)
     if publisher:
         query = query.filter(Book.publisher.ilike(publisher))

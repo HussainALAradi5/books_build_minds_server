@@ -1,5 +1,6 @@
 from flask import Blueprint
 from services import book_service
+from services.books import book_print_service
 from utils.security import require_admin, require_user
 from enums.accounts.permission import Permission
 
@@ -14,3 +15,6 @@ books.add_url_rule("/book/<string:slug>", view_func=book_service.get_book, metho
 books.add_url_rule("/book/<string:slug>", view_func=require_admin(Permission.BOOK_EDIT_ANY)(book_service.update_book), methods=["PUT"])
 books.add_url_rule("/book/<string:slug>", view_func=require_admin(Permission.BOOK_DELETE_ANY)(book_service.delete_book), methods=["DELETE"])
 books.add_url_rule("/book/<string:slug>/purchase", view_func=require_user(Permission.PURCHASE_WRITE_ONE)(book_service.purchase_book), methods=["POST"])
+
+books.add_url_rule("/book/<string:slug>/codes", view_func=book_print_service.get_book_codes, methods=["GET"])
+books.add_url_rule("/book/<string:slug>/print", view_func=book_print_service.download_book_pdf, methods=["GET"])

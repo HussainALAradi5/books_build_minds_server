@@ -19,6 +19,8 @@ app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv(
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 app.config["JWT_SECRET_KEY"] = os.getenv("JWT_SECRET_KEY") or secrets.token_urlsafe(48)
 app.config["MAX_CONTENT_LENGTH"] = 25 * 1024 * 1024
+app.config["PUBLIC_CLIENT_URL"] = os.getenv("PUBLIC_CLIENT_URL", "http://localhost:3000")
+
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
 socketio = SocketIO(
