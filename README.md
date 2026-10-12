@@ -1,16 +1,16 @@
 # Books Builds Minds — server repository
 
-This is the **server** repository for Books Builds Minds. The matching [client repository](../client/README.md) is a Next.js and Chakra UI application. The separate [documentation repository](../documentation/README.md) maps service signatures, business rules, endpoints, and errors. These links work when the repositories are sibling folders.
+This is the **server** repository for Books Builds Minds. The matching [client repository](https://github.com/HussainALAradi5/books_build_minds_client_side/blob/main/README.md) is a Next.js and Chakra UI application. The separate [documentation repository](https://github.com/HussainALAradi5/books_build_minds_documentation/blob/main/README.md) maps service signatures, business rules, endpoints, and errors. The related repository links point to the published GitHub repositories.
 
 ## Related repositories
 
-| Repository | Local link | What it contains |
+| Repository | GitHub link | What it contains |
 | --- | --- | --- |
 | Server | This repository | Flask API, models, migrations, services, and tests |
-| Client | [Open client repository](../client/README.md) | Next.js application and workflow screenshots |
-| Documentation | [Open documentation repository](../documentation/README.md) | Architecture, setup, service signatures, endpoints, and errors |
+| Client | [Open client repository](https://github.com/HussainALAradi5/books_build_minds_client_side/blob/main/README.md) | Next.js application and workflow screenshots |
+| Documentation | [Open documentation repository](https://github.com/HussainALAradi5/books_build_minds_documentation/blob/main/README.md) | Architecture, setup, service signatures, endpoints, and errors |
 
-These folders are separate Git repositories. Their local links require a sibling checkout; GitHub URLs can be added after the remote repositories are created.
+The related repository links point to the published GitHub repositories.
 
 ## Setup with PostgreSQL and pgAdmin
 
@@ -26,7 +26,7 @@ These folders are separate Git repositories. Their local links require a sibling
    .\.venv\Scripts\python.exe app.py
    ```
 
-4. Follow the [client setup](../client/README.md) to point Next.js at this API and sign in.
+4. Follow the [client setup](https://github.com/HussainALAradi5/books_build_minds_client_side/blob/main/README.md) to point Next.js at this API and sign in.
 
 Use the migration command on a new or existing database; back up an existing database first. `seed-demo --test-accounts` creates or updates the three active demo logins below, while `seed-demo` alone generates random passwords for new users. `seed-demo --reset-passwords` regenerates random passwords. Demo seeding is refused when `APP_ENV=production`. The client reads all demo data from this API.
 
@@ -62,4 +62,8 @@ Country records can be synced through `POST /api/countries/sync` from [countries
 .\.venv\Scripts\flask.exe --app app db check
 ```
 
-See [ordered migrations](../documentation/database/migrations.md), [feature endpoint tables](../documentation/README.md), and the [client screenshots](../client/docs/screenshots/README.md). No GitHub remote is configured yet; add one after creating the server GitHub repository.
+See [ordered migrations](https://github.com/HussainALAradi5/books_build_minds_documentation/blob/main/database/migrations.md), [feature endpoint tables](https://github.com/HussainALAradi5/books_build_minds_documentation/blob/main/README.md), and the [client screenshots](https://github.com/HussainALAradi5/books_build_minds_client_side/blob/main/docs/screenshots/README.md). No GitHub remote is configured yet; add one after creating the server GitHub repository.
+
+## Security
+
+Book changes require the administrator account role as well as an action permission. Reviews may be changed only by their author or an administrator with the required permission. Delegated permissions cannot bypass those restrictions. Read the [security controls, test coverage, and deployment requirements](https://github.com/HussainALAradi5/books_build_minds_documentation/blob/main/security/README.md) before exposing a live service.
