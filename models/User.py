@@ -21,6 +21,7 @@ class User(BaseEntity, db.Model):
              native_enum=False, validate_strings=True, length=20),
         nullable=False, default=AccountRole.CLIENT, server_default=AccountRole.CLIENT.value,
     )
+    token_version = Column(Integer, nullable=False, default=0, server_default="0")
     is_active = Column(Boolean, nullable=False, default=True)
 
     purchased_books = relationship("Book", secondary="purchased_books", back_populates="purchased_by_users")

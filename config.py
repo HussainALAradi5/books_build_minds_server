@@ -21,6 +21,16 @@ app.config["JWT_SECRET_KEY"] = os.getenv("JWT_SECRET_KEY") or secrets.token_urls
 app.config["MAX_CONTENT_LENGTH"] = 25 * 1024 * 1024
 app.config["PUBLIC_CLIENT_URL"] = os.getenv("PUBLIC_CLIENT_URL", "http://localhost:3000")
 
+app.config["TAP_SECRET_KEY"] = os.getenv("TAP_SECRET_KEY", "")
+app.config["TAP_WEBHOOK_URL"] = os.getenv("TAP_WEBHOOK_URL", "")
+
+if os.getenv("APP_ENV") == "production":
+    if len(os.getenv("JWT_SECRET_KEY", "")) < 32:
+        raise RuntimeError("Production requires a persistent JWT secret of at least 32 characters")
+    if not app.config["SQLALCHEMY_DATABASE_URI"].startswith("postgresql"):
+        raise RuntimeError("Production workflows require PostgreSQL row locking")
+    if not app.config["PUBLIC_CLIENT_URL"].startswith("https://"):
+        raise RuntimeError("Production requires an HTTPS public client URL")
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
 socketio = SocketIO(

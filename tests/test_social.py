@@ -8,6 +8,8 @@ from unittest.mock import patch
 os.environ["DATABASE_URL"] = "sqlite:///:memory:"
 os.environ["JWT_SECRET_KEY"] = "test-only-secret-long-enough-for-hs256"
 
+from payment_fixture import pay
+from constants.library_policy import POLICY_VERSION
 from app import app, socketio  # noqa: E402
 from config import db  # noqa: E402
 from models.Author import Author  # noqa: E402
@@ -24,6 +26,8 @@ from seed_demo import TEST_PASSWORDS  # noqa: E402
 
 class SocialTests(unittest.TestCase):
     def setUp(self):
+        from app import limiter
+        limiter.enabled = False
         self.context = app.app_context()
         self.context.push()
         db.create_all()
@@ -64,7 +68,7 @@ class SocialTests(unittest.TestCase):
         review_path = "/api/book/a-book/review"
         payload = {"rating": 5, "comment": "A thoughtful review", "description": "A longer description"}
         self.assertEqual(self.client.post(review_path, headers=self.headers(self.reader), json=payload).status_code, 403)
-        self.assertEqual(self.client.post("/api/book/a-book/purchase", headers=self.headers(self.reader)).status_code, 200)
+        pay(self, self.reader, "a-book")
         created = self.client.post(review_path, headers=self.headers(self.reader), json=payload)
         self.assertEqual(created.status_code, 201)
         review_id = created.json["review"]["review_id"]
@@ -82,7 +86,7 @@ class SocialTests(unittest.TestCase):
 
     def test_one_active_review_per_purchaser(self):
         path = "/api/book/a-book/review"
-        self.client.post("/api/book/a-book/purchase", headers=self.headers(self.reader))
+        pay(self, self.reader, "a-book")
         payload = {"rating": 5, "comment": "A really useful book"}
         self.assertEqual(self.client.post(path, headers=self.headers(self.reader), json=payload).status_code, 201)
         self.assertEqual(self.client.post(path, headers=self.headers(self.reader), json=payload).status_code, 409)
@@ -180,7 +184,7 @@ class SocialTests(unittest.TestCase):
                              ("post", "/api/book/bulk"), ("post", f"/api/media/books/{self.book.book_id}")]:
             with self.subTest(path=path, method=method):
                 self.assertEqual(getattr(self.client, method)(path, headers=headers, json={}).status_code, 403)
-        self.client.post("/api/book/a-book/purchase", headers=self.headers(self.reader))
+        pay(self, self.reader, "a-book")
         review = self.client.post("/api/book/a-book/review", headers=self.headers(self.reader),
                                   json={"rating": 4, "comment": "A thoughtful reader review"})
         self.assertEqual(review.status_code, 201)
@@ -193,7 +197,7 @@ class SocialTests(unittest.TestCase):
     def test_book_socket_room_receives_review_change(self):
         socket_client = socketio.test_client(app)
         socket_client.emit("join_book", {"slug": "a-book"})
-        self.client.post("/api/book/a-book/purchase", headers=self.headers(self.reader))
+        pay(self, self.reader, "a-book")
         self.client.post("/api/book/a-book/review", headers=self.headers(self.reader),
                          json={"rating": 4, "comment": "A good live review"})
         events = socket_client.get_received()
@@ -201,8 +205,9 @@ class SocialTests(unittest.TestCase):
         socket_client.disconnect()
 
     def test_rental_has_fee_term_and_return_workflow(self):
-        rented = self.client.post("/api/book/a-book/rent", headers=self.headers(self.reader))
-        self.assertEqual(rented.status_code, 201)
+        pay(self, self.reader, "a-book", "rental")
+        rented = self.client.get("/api/book/a-book/loan", headers=self.headers(self.reader))
+        self.assertEqual(rented.status_code, 200)
         self.assertEqual(rented.json["loan"]["loan_kind"], "rent")
         self.assertEqual(rented.json["loan"]["rental_fee"], 1.0)
         self.assertEqual(self.client.post("/api/book/a-book/borrow", headers=self.headers(self.reader)).status_code, 409)

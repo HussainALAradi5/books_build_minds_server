@@ -15,7 +15,7 @@ from utils.responses import error
 def create_token(user):
     now = datetime.now(timezone.utc)
     return jwt.encode(
-        {"sub": str(user.user_id), "iat": now, "exp": now + timedelta(hours=8)},
+        {"sub": str(user.user_id), "ver": user.token_version, "iat": now, "exp": now + timedelta(hours=8)},
         app.config["JWT_SECRET_KEY"], algorithm="HS256",
     )
 
@@ -29,7 +29,7 @@ def current_user():
         payload = jwt.decode(token, app.config["JWT_SECRET_KEY"], algorithms=["HS256"])
         user_id = int(payload["sub"])
         user = db.session.get(User, user_id)
-        return user if user and user.is_active and not user.is_deleted and not user.is_archived else None
+        return user if user and payload.get("ver") == user.token_version and user.is_active and not user.is_deleted and not user.is_archived else None
     except (jwt.PyJWTError, KeyError, TypeError, ValueError):
         return None
 

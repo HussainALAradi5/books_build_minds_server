@@ -17,6 +17,8 @@ from utils.printing.book_codes import book_url
 
 class BookPrintTests(unittest.TestCase):
     def setUp(self):
+        from app import limiter
+        limiter.enabled = False
         self.context = app.app_context()
         self.context.push()
         db.create_all()

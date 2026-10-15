@@ -40,16 +40,15 @@ class Book(BaseEntity, db.Model):
     receipts = relationship("Receipt", backref="book", cascade="all, delete-orphan")
     reviews = relationship("Review", back_populates="book", cascade="all, delete-orphan")
     media = relationship("Media", back_populates="book", cascade="all, delete-orphan")
+    transactions = relationship("Transaction", back_populates="book")
     loans = relationship("Loan", back_populates="book")
     activities = relationship("LibraryActivity", back_populates="book")
 
     @property
     def available_copies(self):
-        active_loans = sum(
-            loan.returned_at is None and not loan.is_deleted and not loan.is_archived
-            for loan in self.loans
-        )
-        return max(0, self.copies_total - active_loans)
+        active_loans = sum(loan.returned_at is None and not loan.is_deleted and not loan.is_archived for loan in self.loans)
+        reservations = sum(item.status == "pending" for item in self.transactions)
+        return max(0, self.copies_total - active_loans - len(self.purchased_by_users) - reservations)
 
     @property
     def average_rating(self):

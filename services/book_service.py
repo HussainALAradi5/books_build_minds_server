@@ -20,7 +20,7 @@ from utils.book_events import emit_book_changed
 from utils.book_lookup import visible_book
 from utils.printing.book_codes import parse_barcode
 from utils.book_input import normalize_book_input, resolve_catalog_people
-from services.receipts.receipt_service import create_purchase_receipt
+from utils.inventory import has_open_work, occupied_copies, locked_book
 from utils.tabular import export_table, import_table
 
 
@@ -139,12 +139,12 @@ def bulk_books():
         return error("Select 1 to 100 book IDs")
     if action not in ("archive", "unarchive", "delete"):
         return error("Unsupported bulk action")
-    books = Book.query.filter(Book.book_id.in_(ids), Book.is_deleted.is_(False)).all()
+    books = Book.query.filter(Book.book_id.in_(ids), Book.is_deleted.is_(False)).order_by(Book.book_id).with_for_update().all()
     if len(books) != len(set(ids)):
         return error("One or more books were not found", 404)
     for book in books:
-        if action == "delete" and book.available_copies < book.copies_total:
-            return error("Return active loans before deleting books", 409)
+        if action in ("delete", "archive") and has_open_work(book):
+            return error("Resolve active loans and pending checkouts before archiving or deleting books", 409)
     for book in books:
         if action == "archive":
             book.is_archived = True
@@ -181,7 +181,8 @@ def create_book():
 
 
 def update_book(slug):
-    book = visible_book(slug)
+    candidate = visible_book(slug)
+    book = locked_book(candidate.book_id) if candidate else None
     if not book:
         return error("Book not found", 404)
     data = json_body()
@@ -220,8 +221,8 @@ def update_book(slug):
         copies = data["copies_total"]
         if type(copies) is not int or not 1 <= copies <= 1000:
             return error("copies_total must be between 1 and 1000")
-        if copies < book.copies_total - book.available_copies:
-            return error("Copies cannot be fewer than active loans")
+        if copies < occupied_copies(book):
+            return error("Copies cannot be fewer than sales, active loans, and reserved stock")
         book.copies_total = copies
     if "condition" in data:
         if data["condition"] not in {item.value for item in BookStatus}:
@@ -238,11 +239,12 @@ def update_book(slug):
 
 
 def delete_book(slug):
-    book = visible_book(slug)
+    candidate = visible_book(slug)
+    book = locked_book(candidate.book_id) if candidate else None
     if not book:
         return error("Book not found", 404)
-    if book.available_copies < book.copies_total:
-        return error("Return active loans before deleting this book", 409)
+    if has_open_work(book):
+        return error("Resolve active loans and pending checkouts before deleting this book", 409)
     book.is_deleted = True
     db.session.commit()
     emit_book_changed(slug, "book")
@@ -250,15 +252,4 @@ def delete_book(slug):
 
 
 def purchase_book(slug):
-    book = visible_book(slug)
-    if not book:
-        return error("Book not found", 404)
-    if book in g.user.purchased_books:
-        return error("Book already purchased", 409)
-    receipt = create_purchase_receipt(g.user.user_id, book.book_id)
-    g.user.purchased_books.append(book)
-    db.session.add(receipt)
-    db.session.add(LibraryActivity(user_id=g.user.user_id, book_id=book.book_id, action_type=LibraryActionType.BUY.value))
-    db.session.add(LibraryActivity(user_id=book.added_by_user_id, book_id=book.book_id, action_type=LibraryActionType.SELL.value))
-    db.session.commit()
-    return success("Book purchased", book=book.to_dict(), receipt=receipt.to_dict())
+    return error("Use verified payment checkout for purchases", 409)

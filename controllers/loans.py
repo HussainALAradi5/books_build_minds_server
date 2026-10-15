@@ -1,5 +1,6 @@
 from flask import Blueprint
 from services import loan_service
+from services.library.loan_quote_service import loan_quote
 from utils.security import require_user
 from enums.accounts.permission import Permission
 
@@ -9,3 +10,5 @@ loans.add_url_rule("/book/<string:slug>/borrow", view_func=require_user(Permissi
 loans.add_url_rule("/book/<string:slug>/rent", view_func=require_user(Permission.LOAN_WRITE_ONE)(loan_service.rent_book), methods=["POST"])
 loans.add_url_rule("/book/<string:slug>/return", view_func=require_user(Permission.LOAN_WRITE_ONE)(loan_service.return_book), methods=["POST"])
 loans.add_url_rule("/profile/<int:user_id>/loans", view_func=require_user(Permission.LOAN_READ_OWN, owner_param="user_id")(loan_service.list_loans), methods=["GET"])
+
+loans.add_url_rule("/book/<string:slug>/quote", view_func=require_user()(loan_quote), methods=["GET"])

@@ -1,0 +1,8 @@
+from decimal import Decimal
+
+BORROW_DAYS = 14
+RENTAL_DAYS = 7
+RENTAL_RATE = Decimal("0.20")
+CURRENCY = "bhd"
+CURRENCY_SCALE = 1000
+POLICY_VERSION = "2026-10-12"

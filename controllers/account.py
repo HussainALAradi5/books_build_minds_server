@@ -13,3 +13,5 @@ account.add_url_rule("/profile/<int:user_id>/activities", view_func=require_user
 account.add_url_rule("/admin-requests", view_func=require_user(Permission.ADMIN_REQUEST_READ_ANY)(account_service.list_admin_requests), methods=["GET"])
 account.add_url_rule("/admin-requests", view_func=require_user(Permission.ADMIN_REQUEST_WRITE_ONE)(account_service.submit_admin_request), methods=["POST"])
 account.add_url_rule("/admin-requests/<int:request_id>", view_func=require_user(Permission.ADMIN_REQUEST_EDIT_ANY)(account_service.review_admin_request), methods=["PATCH"])
+
+account.add_url_rule("/logout", view_func=require_user()(account_service.logout), methods=["POST"])

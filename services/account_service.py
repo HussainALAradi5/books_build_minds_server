@@ -78,6 +78,7 @@ def edit_profile(user_id):
         if not valid_password(data["password"]):
             return error("Password needs at least 5 letters and 3 numbers")
         g.user.password_digest = generate_password_hash(data["password"])
+        g.user.token_version += 1
     db.session.commit()
     return success("Profile updated", user=g.user.to_dict())
 
@@ -160,3 +161,9 @@ def review_admin_request(request_id):
         requester.role = AccountRole.ADMIN.value
     db.session.commit()
     return success("Admin request reviewed", request=item.to_dict())
+
+
+def logout():
+    User.query.filter_by(user_id=g.user.user_id).update({User.token_version: User.token_version + 1})
+    db.session.commit()
+    return success("Signed out of all sessions")

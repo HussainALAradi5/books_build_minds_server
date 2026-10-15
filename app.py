@@ -6,6 +6,7 @@ from config import socketio
 from flask_socketio import join_room
 from models.Book import Book
 from utils.book_events import book_room
+from controllers.payments.routes import payments
 from controllers.account import account
 from controllers.books import books
 from controllers.media import media
@@ -16,7 +17,7 @@ from controllers.catalog import catalog
 from controllers.access.routes import access
 import models  # noqa: F401 - registers SQLAlchemy models for migrations
 
-for blueprint in (account, books, reviews, receipts, catalog, media, loans, access):
+for blueprint in (account, books, reviews, receipts, catalog, media, loans, access, payments):
     app.register_blueprint(blueprint, url_prefix="/api")
 
 
@@ -47,3 +48,22 @@ if __name__ == "__main__":
 
 
 import seed_demo  # noqa: F401 - registers CLI seed command
+
+import services.payments.reconciliation_cli  # noqa: F401
+from utils.security_limits import initialize_limits
+limiter = initialize_limits(app)
+
+from sqlalchemy.exc import IntegrityError, OperationalError
+from sqlalchemy.orm.exc import StaleDataError
+from utils.responses import error
+
+@app.errorhandler(IntegrityError)
+@app.errorhandler(StaleDataError)
+def concurrent_change(_exc):
+    db.session.rollback()
+    return error("The record changed during your request. Refresh and retry.", 409)
+
+@app.errorhandler(OperationalError)
+def database_unavailable(_exc):
+    db.session.rollback()
+    return error("Database temporarily unavailable. Retry the same request.", 503)

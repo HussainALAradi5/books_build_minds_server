@@ -71,3 +71,9 @@ Book changes require the administrator account role as well as an action permiss
 ## Book printing
 
 Public `GET /api/book/<slug>/print` downloads a book record with QR and Code 128 codes. `GET /api/book/<slug>/codes` returns the generated code images. Configure `PUBLIC_CLIENT_URL` to the browser-facing client URL before printing labels. Catalog search accepts the printed `BBM-` identifier. See [printing documentation](https://github.com/HussainALAradi5/books_build_minds_documentation/blob/main/features/books/printing/README.md).
+
+## Guided borrowing and BHD sandbox payments
+
+Borrowing now requires a server quote, accepted library terms and final confirmation. Purchases and rentals use Tap's BHD sandbox with persisted transactions and immutable PDF receipts. Delete/bulk changes use confirmation dialogs; failed changes remain visible for retry.
+
+See [payment setup, services, endpoint contracts and release limits](https://github.com/HussainALAradi5/books_build_minds_documentation/blob/main/features/payments/README.md). Configure `TAP_SECRET_KEY` and the public HTTPS `TAP_WEBHOOK_URL` on the server. Live keys are rejected. Real sandbox verification still requires your own provider account and webhook. No secrets belong in the client repository.

@@ -1,3 +1,5 @@
+from .payments.Transaction import Transaction
+from .payments.PaymentEvent import PaymentEvent
 from . import User
 from . import Book
 from .reviews import Review

@@ -12,6 +12,8 @@ from PIL import Image
 os.environ["DATABASE_URL"] = "sqlite:///:memory:"
 os.environ["JWT_SECRET_KEY"] = "test-only-secret-long-enough-for-hs256"
 
+from payment_fixture import pay
+from constants.library_policy import POLICY_VERSION
 from app import app  # noqa: E402
 from config import db  # noqa: E402
 from models.Book import Book  # noqa: E402
@@ -29,6 +31,8 @@ from config import BASE_DIR  # noqa: E402
 
 class SecurityTests(unittest.TestCase):
     def setUp(self):
+        from app import limiter
+        limiter.enabled = False
         self.context = app.app_context()
         self.context.push()
         db.create_all()
@@ -113,12 +117,12 @@ class SecurityTests(unittest.TestCase):
     def test_borrow_return_and_availability(self):
         self.book.copies_total = 1
         db.session.commit()
-        borrowed = self.client.post("/api/book/one-book/borrow", headers=self.headers)
+        borrowed = self.client.post("/api/book/one-book/borrow", headers=self.headers, json={"accepted_terms": True, "policy_version": POLICY_VERSION})
         self.assertEqual(borrowed.status_code, 201)
         self.assertEqual(borrowed.json["loan"]["status"], "active")
         self.assertEqual(self.client.get("/api/book/one-book").json["available_copies"], 0)
         other_headers = {"Authorization": f"Bearer {create_token(self.other)}"}
-        self.assertEqual(self.client.post("/api/book/one-book/borrow", headers=other_headers).status_code, 409)
+        self.assertEqual(self.client.post("/api/book/one-book/borrow", headers=other_headers, json={"accepted_terms": True, "policy_version": POLICY_VERSION}).status_code, 409)
         self.assertEqual(self.client.get(f"/api/profile/{self.user.user_id}/loans", headers=other_headers).status_code, 403)
         self.assertEqual(self.client.get(f"/api/profile/{self.user.user_id}/loans?status=active", headers=self.headers).json["pagination"]["total"], 1)
         returned = self.client.post("/api/book/one-book/return", headers=self.headers)
@@ -144,9 +148,9 @@ class SecurityTests(unittest.TestCase):
 
     def test_condition_and_action_history_are_typed(self):
         self.assertEqual(self.client.get("/api/book/one-book").json["condition"], "good")
-        self.assertEqual(self.client.post("/api/book/one-book/borrow", headers=self.headers).status_code, 201)
+        self.assertEqual(self.client.post("/api/book/one-book/borrow", headers=self.headers, json={"accepted_terms": True, "policy_version": POLICY_VERSION}).status_code, 201)
         self.assertEqual(self.client.post("/api/book/one-book/return", headers=self.headers).status_code, 200)
-        self.assertEqual(self.client.post("/api/book/one-book/purchase", headers=self.headers).status_code, 200)
+        pay(self, self.user, "one-book")
         listing = self.client.get(f"/api/profile/{self.user.user_id}/activities?action=borrow", headers=self.headers)
         self.assertEqual(listing.json["pagination"]["total"], 1)
         self.assertEqual(listing.json["items"][0]["action_type"], "borrow")

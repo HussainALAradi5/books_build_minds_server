@@ -21,6 +21,8 @@ class Loan(BaseEntity, db.Model):
     due_at = Column(DateTime(timezone=True), nullable=False)
     returned_at = Column(DateTime(timezone=True))
     loan_kind = Column(String(16), nullable=False, default=LoanKind.BORROW.value)
+    policy_version = Column(String(32))
+    transaction_id = Column(String(36), ForeignKey("library_transaction.transaction_id", name="fk_loan_transaction"), unique=True)
     rental_fee = Column(Float, nullable=False, default=0)
 
     user = relationship("User", back_populates="loans")
