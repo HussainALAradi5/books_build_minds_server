@@ -50,9 +50,36 @@ class SocialTests(unittest.TestCase):
     def headers(self, user):
         return {"Authorization": f"Bearer {create_token(user)}"}
 
+    def test_member_export_selection_and_admin_only_import(self):
+        from openpyxl import load_workbook
+        second = Book(title="Another Book", slug="another-book", isbn="another-isbn", author="Writer",
+                      publisher="Press", published_at=date(2022, 1, 1), price=7,
+                      added_by_user_id=self.admin.user_id)
+        db.session.add(second)
+        db.session.commit()
+        response = self.client.get(f"/api/book/export?format=xlsx&ids={self.book.book_id}",
+                                   headers=self.headers(self.reader))
+        self.assertEqual(response.status_code, 200)
+        rows = list(load_workbook(BytesIO(response.data), read_only=True).active.values)
+        self.assertEqual(len(rows), 2)
+        self.assertIn("A Book", rows[1])
+        self.assertEqual(self.client.get("/api/book/export?format=xlsx&ids=abc",
+                          headers=self.headers(self.reader)).status_code, 400)
+        self.assertEqual(self.client.post("/api/book/import", headers=self.headers(self.reader)).status_code, 403)
+
     def test_documented_demo_accounts_login_with_expected_roles(self):
         result = app.test_cli_runner().invoke(args=["seed-demo", "--test-accounts"])
         self.assertEqual(result.exit_code, 0, result.output)
+        from seed_demo import BOOKS
+        from models.Publisher import Publisher
+        for _, isbn, _, _, _, _ in BOOKS:
+            seeded = Book.query.filter_by(isbn=isbn).one()
+            self.assertIsNotNone(seeded.author_id)
+            self.assertIsNotNone(seeded.publisher_id)
+        before = Publisher.query.count()
+        rerun = app.test_cli_runner().invoke(args=["seed-demo"])
+        self.assertEqual(rerun.exit_code, 0, rerun.output)
+        self.assertEqual(Publisher.query.count(), before)
         for username, role in (("demo_admin", AccountRole.ADMIN),
                                ("demo_employee", AccountRole.EMPLOYEE),
                                ("demo_client", AccountRole.CLIENT)):

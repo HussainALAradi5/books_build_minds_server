@@ -94,7 +94,14 @@ BOOK_IMPORT_COLUMNS = ("title", "isbn", "author", "publisher", "published_at", "
 def export_books():
     try:
         options = page_options()
-        books = filtered_books(options).limit(5000).all()
+        query = filtered_books(options)
+        selected = request.args.get("ids")
+        if selected is not None:
+            values = selected.split(",")
+            if not 1 <= len(values) <= 100 or any(not value.isdigit() or int(value) < 1 for value in values):
+                raise ValueError("Select between 1 and 100 valid book IDs")
+            query = query.filter(Book.book_id.in_([int(value) for value in values]))
+        books = query.limit(5000).all()
         rows = [book.to_summary_dict() for book in books]
         return export_table(BOOK_EXPORT_COLUMNS, rows, request.args.get("format", "xlsx"), "library-books")
     except ValueError as exc:

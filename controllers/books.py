@@ -7,7 +7,7 @@ from enums.accounts.permission import Permission
 books = Blueprint("books", __name__)
 books.add_url_rule("/", view_func=book_service.list_books, methods=["GET"])
 books.add_url_rule("/book", view_func=require_admin(Permission.BOOK_WRITE_ONE)(book_service.create_book), methods=["POST"])
-books.add_url_rule("/book/export", view_func=require_user(Permission.BOOK_READ_ANY)(book_service.export_books), methods=["GET"])
+books.add_url_rule("/book/export", view_func=require_user()(book_service.export_books), methods=["GET"])
 books.add_url_rule("/book/manage", view_func=require_user(Permission.BOOK_READ_ANY)(book_service.list_managed_books), methods=["GET"])
 books.add_url_rule("/book/import", view_func=require_admin(Permission.BOOK_IMPORT)(book_service.import_books), methods=["POST"])
 books.add_url_rule("/book/bulk", view_func=require_admin(Permission.BOOK_BULK_EDIT)(book_service.bulk_books), methods=["POST"])

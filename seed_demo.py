@@ -11,6 +11,7 @@ from config import app, db
 from enums.accounts.account_role import AccountRole
 from models.Book import Book
 from models.User import User
+from utils.book_input import resolve_catalog_people
 
 BOOKS = [
     ("The Midnight Library", "9780525559474", "Matt Haig", "Viking", date(2020, 9, 29), 7.50),
@@ -65,9 +66,18 @@ def seed_demo(reset_passwords: bool, test_accounts: bool):
     db.session.flush()
     admin = User.query.filter_by(email="demo-admin@example.test").one()
     for title, isbn, author, publisher, published, price in BOOKS:
-        if Book.query.filter_by(isbn=isbn).first():
+        existing = Book.query.filter_by(isbn=isbn).first()
+        if existing:
+            author_record, publisher_record = resolve_catalog_people(existing.author, existing.publisher)
+            if existing.author_id is None:
+                existing.author_id = author_record.author_id
+            if existing.publisher_id is None:
+                existing.publisher_id = publisher_record.publisher_id
             continue
-        db.session.add(Book(title=title, slug=title.lower().replace(" ", "-"), isbn=isbn, author=author, publisher=publisher, published_at=published, price=price, added_by_user_id=admin.user_id))
+        author_record, publisher_record = resolve_catalog_people(author, publisher)
+        db.session.add(Book(title=title, slug=title.lower().replace(" ", "-"), isbn=isbn, author=author,
+            publisher=publisher, author_id=author_record.author_id, publisher_id=publisher_record.publisher_id,
+            published_at=published, price=price, added_by_user_id=admin.user_id))
     db.session.commit()
     click.echo("Demo books ready")
 
