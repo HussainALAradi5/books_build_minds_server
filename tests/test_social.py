@@ -15,10 +15,12 @@ from config import db  # noqa: E402
 from models.Author import Author  # noqa: E402
 from models.Book import Book  # noqa: E402
 from models.reviews.Review import Review  # noqa: E402
+from models.Media import Media  # noqa: E402
 from models.Country import Country  # noqa: E402
 from models.User import User  # noqa: E402
 from enums.accounts.account_role import AccountRole  # noqa: E402
 from enums.accounts.permission import Permission  # noqa: E402
+from enums.media.media_type import MediaType  # noqa: E402
 from utils.access import all_of, any_of, has_access, owns  # noqa: E402
 from utils.security import create_token  # noqa: E402
 from seed_demo import TEST_PASSWORDS  # noqa: E402
@@ -49,6 +51,22 @@ class SocialTests(unittest.TestCase):
 
     def headers(self, user):
         return {"Authorization": f"Bearer {create_token(user)}"}
+
+    def test_review_includes_active_author_profile_picture(self):
+        review = Review(user_id=self.reader.user_id, book_id=self.book.book_id, rating=5,
+                        comment="A thoughtful and useful book", written_time=date.today())
+        picture = Media(user_id=self.reader.user_id, uploaded_by_user_id=self.reader.user_id,
+                        media_type=MediaType.PROFILE_PICTURE.value, filename="reader-avatar.png",
+                        original_name="avatar.png", mime_type="image/png", size_bytes=100)
+        db.session.add_all([review, picture])
+        db.session.commit()
+        endpoint = "/api/book/a-book/review"
+        response = self.client.get(endpoint)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json["items"][0]["profile_picture_url"], "/static/media/reader-avatar.png")
+        picture.is_archived = True
+        db.session.commit()
+        self.assertIsNone(self.client.get(endpoint).json["items"][0]["profile_picture_url"])
 
     def test_member_export_selection_and_admin_only_import(self):
         from openpyxl import load_workbook

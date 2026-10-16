@@ -2,6 +2,7 @@
 from datetime import datetime, timezone
 
 from flask import g, jsonify, request
+from sqlalchemy.orm import joinedload, selectinload
 
 from config import db
 from dto.reviews.review_input_dto import ReviewInputDTO
@@ -9,6 +10,7 @@ from dto.reviews.review_update_dto import ReviewUpdateDTO
 from enums.accounts.permission import Permission
 from enums.accounts.account_role import AccountRole
 from models.reviews.Review import Review
+from models.User import User
 from utils.access import all_of, any_of, has_access, has_role, owns, purchased
 from utils.book_events import emit_book_changed
 from utils.book_lookup import visible_book
@@ -22,7 +24,9 @@ def list_reviews(slug):
     if not book:
         return error("Book not found", 404)
     try:
-        query = Review.query.filter_by(book_id=book.book_id, is_deleted=False, is_archived=False)
+        query = Review.query.options(joinedload(Review.user).selectinload(User.profile_media)).filter_by(
+            book_id=book.book_id, is_deleted=False, is_archived=False
+        )
         term = clean_text(request.args.get("q"), 120)
         if term:
             query = query.filter(Review.comment.ilike(f"%{term}%"))

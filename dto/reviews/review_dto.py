@@ -4,6 +4,7 @@ class ReviewDTO(BaseEntityDTO):
     review_id: int
     user_id: int
     user_name: str
+    profile_picture_url: str | None
     book_id: int
     comment: str
     description: str

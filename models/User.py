@@ -41,10 +41,17 @@ class User(BaseEntity, db.Model):
     def is_admin(self, value: bool) -> None:
         self.role = AccountRole.ADMIN.value if value else AccountRole.CLIENT.value
 
+    @property
+    def profile_picture_url(self) -> str | None:
+        picture = next(
+            (item for item in reversed(self.profile_media) if not item.is_deleted and not item.is_archived),
+            None,
+        )
+        return f"/static/media/{picture.filename}" if picture else None
+
     def to_dict(self) -> UserDTO:
         from utils.access import permissions_for_user
 
-        profile_pictures = [item for item in self.profile_media if not item.is_deleted and not item.is_archived]
         return {
             "user_id": self.user_id,
             "user_name": self.user_name,
@@ -55,5 +62,5 @@ class User(BaseEntity, db.Model):
             **self.entity_dict(),
             "purchased_books": [book.book_id for book in self.purchased_books if not book.is_deleted and not book.is_archived],
             "receipts": [receipt.to_dict() for receipt in self.receipts if not receipt.is_deleted and not receipt.is_archived],
-            "profile_picture_url": profile_pictures[-1].to_dict()["url"] if profile_pictures else None,
+            "profile_picture_url": self.profile_picture_url,
         }

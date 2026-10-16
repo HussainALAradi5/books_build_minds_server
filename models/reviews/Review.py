@@ -34,6 +34,7 @@ class Review(BaseEntity, db.Model):
             "review_id": self.review_id,
             "user_id": self.user_id,
             "user_name": self.user.user_name,
+            "profile_picture_url": self.user.profile_picture_url,
             "book_id": self.book_id,
             "comment": self.comment,
             "description": self.description,
