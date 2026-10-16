@@ -109,7 +109,7 @@ class SocialTests(unittest.TestCase):
         visitor = User.query.filter_by(user_name="demo_visitor").one()
         self.assertFalse(visitor.is_active)
 
-    def test_only_purchaser_can_review_and_owner_or_admin_can_manage(self):
+    def test_only_purchaser_can_review_owner_can_edit_and_admin_can_delete(self):
         review_path = "/api/book/a-book/review"
         payload = {"rating": 5, "comment": "A thoughtful review", "description": "A longer description"}
         self.assertEqual(self.client.post(review_path, headers=self.headers(self.reader), json=payload).status_code, 403)
@@ -123,8 +123,8 @@ class SocialTests(unittest.TestCase):
         self.assertEqual(self.client.put(path, headers=self.headers(self.other), json={"comment": "Changed by another"}).status_code, 403)
         self.assertEqual(self.client.delete(path, headers=self.headers(self.other)).status_code, 403)
         self.assertEqual(self.client.put(path, headers=self.headers(self.reader), json={"comment": "Reader updated review"}).status_code, 200)
-        self.assertEqual(self.client.put(path, headers=self.headers(self.admin), json={"description": "Admin moderation"}).status_code, 200)
-        self.assertEqual(db.session.get(Review, review_id).updated_by, self.admin.user_id)
+        self.assertEqual(self.client.put(path, headers=self.headers(self.admin), json={"description": "Admin moderation"}).status_code, 403)
+        self.assertEqual(db.session.get(Review, review_id).updated_by, self.reader.user_id)
         self.assertEqual(self.client.delete(path, headers=self.headers(self.admin)).status_code, 200)
         self.assertTrue(db.session.get(Review, review_id).is_deleted)
         self.assertEqual(self.client.get(review_path).json["pagination"]["total"], 0)
@@ -236,7 +236,7 @@ class SocialTests(unittest.TestCase):
         path = f"/api/book/a-book/review/{review.json['review']['review_id']}"
         self.assertEqual(self.client.put(path, headers=headers, json={"rating": 1}).status_code, 403)
         self.assertEqual(self.client.delete(path, headers=headers).status_code, 403)
-        self.assertEqual(self.client.put(path, headers=admin_headers, json={"rating": 5}).status_code, 200)
+        self.assertEqual(self.client.put(path, headers=admin_headers, json={"rating": 5}).status_code, 403)
         self.assertEqual(self.client.delete(path, headers=self.headers(self.reader)).status_code, 200)
 
     def test_book_socket_room_receives_review_change(self):

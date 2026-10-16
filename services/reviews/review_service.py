@@ -85,19 +85,20 @@ def add_review(slug):
     return success("Review added", 201, review=review.to_dict())
 
 
-def owned_review(slug, review_id, own_permission: Permission, any_permission: Permission):
+def owned_review(slug, review_id, own_permission: Permission, any_permission: Permission | None = None):
     review = db.session.get(Review, review_id)
     if not review or review.book.slug != slug or review.is_deleted or review.is_archived:
         return None, error("Review not found for this book", 404)
-    rule = any_of(all_of(has_role(AccountRole.ADMIN), any_permission),
-                  all_of(own_permission, owns(review.user_id)))
+    rule = all_of(own_permission, owns(review.user_id))
+    if any_permission is not None:
+        rule = any_of(rule, all_of(has_role(AccountRole.ADMIN), any_permission))
     if not has_access(g.user, rule):
-        return None, error("Only the author or an administrator may change this review", 403)
+        return None, error("You are not allowed to change this review", 403)
     return review, None
 
 
 def edit_review(slug, review_id):
-    review, failure = owned_review(slug, review_id, Permission.REVIEW_EDIT_OWN, Permission.REVIEW_EDIT_ANY)
+    review, failure = owned_review(slug, review_id, Permission.REVIEW_EDIT_OWN)
     if failure:
         return failure
     data: ReviewUpdateDTO = json_body()
