@@ -210,14 +210,15 @@ class SocialTests(unittest.TestCase):
         permissions = [Permission.BOOK_WRITE_ONE, Permission.BOOK_EDIT_ANY,
                        Permission.BOOK_DELETE_ANY, Permission.BOOK_IMPORT,
                        Permission.BOOK_BULK_EDIT, Permission.BOOK_MEDIA_WRITE,
-                       Permission.REVIEW_EDIT_ANY, Permission.REVIEW_DELETE_ANY]
-        for permission in permissions:
+                       Permission.REVIEW_DELETE_ANY]
+        permission_keys = [item.value for item in permissions] + ["review:edit.any"]
+        for key in permission_keys:
             response = self.client.post("/api/access/permissions", headers=admin_headers,
-                                        json={"key": permission.value, "label": permission.value})
+                                        json={"key": key, "label": key})
             self.assertEqual(response.status_code, 201)
         role = self.client.post("/api/access/roles", headers=admin_headers,
                                 json={"key": "delegated-writer", "name": "Delegated writer",
-                                      "permission_keys": [item.value for item in permissions]})
+                                      "permission_keys": permission_keys})
         self.assertEqual(role.status_code, 201)
         assigned = self.client.put(f"/api/access/users/{self.other.user_id}", headers=admin_headers,
                                    json={"role": AccountRole.EMPLOYEE.value,

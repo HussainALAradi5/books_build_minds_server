@@ -13,7 +13,6 @@ class Permission(StrEnum):
     REVIEW_READ_OWN = "review:read.own"
     REVIEW_WRITE_ONE = "review:write.one"
     REVIEW_EDIT_OWN = "review:edit.own"
-    REVIEW_EDIT_ANY = "review:edit.any"
     REVIEW_DELETE_OWN = "review:delete.own"
     REVIEW_DELETE_ANY = "review:delete.any"
     BOOK_READ_ANY = "book:read.any"

@@ -1,13 +1,13 @@
 """Create typed media storage metadata.
 
 Revision ID: 4280997db745
-Revises:
+Revises: 01e7c4a00000
 """
 from alembic import op
 import sqlalchemy as sa
 
 revision = "4280997db745"
-down_revision = None
+down_revision = "01e7c4a00000"
 branch_labels = None
 depends_on = None
 
