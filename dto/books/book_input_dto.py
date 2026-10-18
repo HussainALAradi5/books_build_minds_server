@@ -4,6 +4,7 @@ from typing import TypedDict
 
 class BookInputDTO(TypedDict):
     title: str
+    description: str
     isbn: str
     author: str
     publisher: str

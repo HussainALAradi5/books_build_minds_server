@@ -12,6 +12,7 @@ from enums.accounts.account_role import AccountRole
 from models.Book import Book
 from models.User import User
 from utils.book_input import resolve_catalog_people
+from constants.demo_book_descriptions import DEMO_BOOK_DESCRIPTIONS
 
 BOOKS = [
     ("The Midnight Library", "9780525559474", "Matt Haig", "Viking", date(2020, 9, 29), 7.50),
@@ -68,6 +69,8 @@ def seed_demo(reset_passwords: bool, test_accounts: bool):
     for title, isbn, author, publisher, published, price in BOOKS:
         existing = Book.query.filter_by(isbn=isbn).first()
         if existing:
+            if not existing.description:
+                existing.description = DEMO_BOOK_DESCRIPTIONS.get(isbn, "")
             author_record, publisher_record = resolve_catalog_people(existing.author, existing.publisher)
             if existing.author_id is None:
                 existing.author_id = author_record.author_id
@@ -75,7 +78,7 @@ def seed_demo(reset_passwords: bool, test_accounts: bool):
                 existing.publisher_id = publisher_record.publisher_id
             continue
         author_record, publisher_record = resolve_catalog_people(author, publisher)
-        db.session.add(Book(title=title, slug=title.lower().replace(" ", "-"), isbn=isbn, author=author,
+        db.session.add(Book(title=title, description=DEMO_BOOK_DESCRIPTIONS.get(isbn, ""), slug=title.lower().replace(" ", "-"), isbn=isbn, author=author,
             publisher=publisher, author_id=author_record.author_id, publisher_id=publisher_record.publisher_id,
             published_at=published, price=price, added_by_user_id=admin.user_id))
     db.session.commit()

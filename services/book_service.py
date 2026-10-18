@@ -82,7 +82,7 @@ def list_managed_books():
 
 
 BOOK_EXPORT_COLUMNS = (
-    ("book_id", "book_id"), ("title", "title"), ("isbn", "isbn"), ("author", "author"),
+    ("book_id", "book_id"), ("title", "title"), ("description", "description"), ("isbn", "isbn"), ("author", "author"),
     ("publisher", "publisher"), ("published_at", "published_at"), ("price", "price"),
     ("copies_total", "copies_total"), ("condition", "condition"),
 )
@@ -100,7 +100,7 @@ def export_books():
                 raise ValueError("Select between 1 and 100 valid book IDs")
             query = query.filter(Book.book_id.in_([int(value) for value in values]))
         books = query.limit(5000).all()
-        rows = [book.to_summary_dict() for book in books]
+        rows = [{**book.to_summary_dict(), "description": book.description} for book in books]
         return export_table(BOOK_EXPORT_COLUMNS, rows, request.args.get("format", "xlsx"), "library-books")
     except ValueError as exc:
         return error(str(exc))

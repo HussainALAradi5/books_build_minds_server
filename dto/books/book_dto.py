@@ -5,6 +5,7 @@ from dto.reviews.review_dto import ReviewDTO
 from dto.media.media_dto import MediaDTO
 
 class BookDTO(BookSummaryDTO):
+    description: str
     reviews: list[ReviewDTO]
     added_by_user_id: int
     purchased_by: list[int]

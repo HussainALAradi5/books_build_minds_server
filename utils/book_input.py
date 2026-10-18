@@ -10,6 +10,7 @@ from utils.validation import clean_text, positive_price, valid_date
 
 def normalize_book_input(data) -> BookInputDTO:
     values = {key: clean_text(data.get(key), 255) for key in ("title", "isbn", "author", "publisher")}
+    description = clean_text(data.get("description"), 4000)
     published = valid_date(data.get("published_at"))
     price = positive_price(data.get("price"))
     copies_raw = data.get("copies_total", 1)
@@ -27,7 +28,7 @@ def normalize_book_input(data) -> BookInputDTO:
     image = clean_text(data.get("book_image"), 500) or None
     if image and not (image.startswith("https://") or image.startswith("/static/covers/")):
         raise ValueError("Cover image must use HTTPS")
-    return {**values, "published_at": published, "price": price, "copies_total": copies_total,
+    return {**values, "description": description, "published_at": published, "price": price, "copies_total": copies_total,
             "condition": condition, "book_image": image}
 
 

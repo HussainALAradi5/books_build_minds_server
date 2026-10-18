@@ -1,5 +1,5 @@
 """Catalog model, purchase relation, and public serializer."""
-from sqlalchemy import Column, Date, Float, ForeignKey, Integer, String
+from sqlalchemy import Column, Date, Float, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import relationship
 
 from config import db
@@ -23,6 +23,7 @@ class Book(BaseEntity, db.Model):
     isbn = Column(String(32), unique=True, nullable=False)
     book_image = Column(String(500))
     title = Column(String(255), unique=True, nullable=False)
+    description = Column(Text, nullable=False, default="", server_default="")
     author = Column(String(255), nullable=False)
     publisher = Column(String(255), nullable=False)
     published_at = Column(Date, nullable=False)
@@ -78,6 +79,7 @@ class Book(BaseEntity, db.Model):
     def to_dict(self) -> BookDTO:
         return {
             **self.to_summary_dict(),
+            "description": self.description,
             "reviews": [review.to_dict() for review in self.reviews if not review.is_deleted and not review.is_archived],
             "added_by_user_id": self.added_by_user_id,
             "purchased_by": [user.user_id for user in self.purchased_by_users],

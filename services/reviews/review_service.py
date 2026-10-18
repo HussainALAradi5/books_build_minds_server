@@ -17,6 +17,7 @@ from utils.book_lookup import visible_book
 from utils.pagination import order_query, page_options, paginate
 from utils.responses import error, success
 from utils.validation import clean_text, json_body, valid_rating
+from utils.security import current_user
 
 
 def list_reviews(slug):
@@ -24,9 +25,20 @@ def list_reviews(slug):
     if not book:
         return error("Book not found", 404)
     try:
+        include_deleted = request.args.get("include_deleted", "false").lower()
+        if include_deleted not in ("true", "false"):
+            raise ValueError("include_deleted must be true or false")
+        if include_deleted == "true":
+            user = current_user()
+            if not user:
+                return error("Authentication required", 401)
+            if not has_access(user, has_role(AccountRole.ADMIN)):
+                return error("Access denied", 403)
         query = Review.query.options(joinedload(Review.user).selectinload(User.profile_media)).filter_by(
-            book_id=book.book_id, is_deleted=False, is_archived=False
+            book_id=book.book_id, is_archived=False
         )
+        if include_deleted == "false":
+            query = query.filter_by(is_deleted=False)
         term = clean_text(request.args.get("q"), 120)
         if term:
             query = query.filter(Review.comment.ilike(f"%{term}%"))

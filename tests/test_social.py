@@ -142,6 +142,27 @@ class SocialTests(unittest.TestCase):
         self.assertEqual(self.client.post(path, headers=self.headers(self.reader), json=payload).status_code, 201)
         self.assertEqual(Review.query.count(), 2)
 
+    def test_only_administrators_can_include_deleted_reviews(self):
+        path = "/api/book/a-book/review"
+        pay(self, self.reader, "a-book")
+        created = self.client.post(path, headers=self.headers(self.reader),
+                                   json={"rating": 4, "comment": "A useful library book"})
+        self.assertEqual(created.status_code, 201)
+        review_id = created.json["review"]["review_id"]
+        self.assertEqual(self.client.delete(f"{path}/{review_id}", headers=self.headers(self.reader)).status_code, 200)
+        self.assertEqual(self.client.get(path).json["pagination"]["total"], 0)
+        self.assertEqual(self.client.get(f"{path}?include_deleted=true").status_code, 401)
+        self.assertEqual(self.client.get(f"{path}?include_deleted=true", headers=self.headers(self.reader)).status_code, 403)
+        self.other.role = AccountRole.EMPLOYEE
+        db.session.commit()
+        self.assertEqual(self.client.get(f"{path}?include_deleted=true", headers=self.headers(self.other)).status_code, 403)
+        self.assertEqual(self.client.get(f"{path}?include_deleted=wrong", headers=self.headers(self.admin)).status_code, 400)
+        visible = self.client.get(f"{path}?include_deleted=true", headers=self.headers(self.admin))
+        self.assertEqual(visible.status_code, 200)
+        self.assertEqual(visible.json["pagination"]["total"], 1)
+        self.assertTrue(visible.json["items"][0]["is_deleted"])
+        self.assertEqual(self.client.get(f"{path}?include_deleted=false", headers=self.headers(self.admin)).json["pagination"]["total"], 0)
+
     def test_only_admin_changes_price_and_creates_catalog_profiles(self):
         path = "/api/book/a-book"
         price_path = f"{path}/price"
@@ -160,6 +181,19 @@ class SocialTests(unittest.TestCase):
         self.assertEqual(self.client.delete(path, headers=self.headers(self.admin)).status_code, 200)
         self.assertTrue(db.session.get(Book, self.book.book_id).is_deleted)
         self.assertEqual(self.client.get(path).status_code, 404)
+
+    def test_book_description_is_created_and_cannot_be_edited_later(self):
+        payload = {"title": "Described Book", "description": "An original summary of this book.",
+                   "isbn": "described-isbn", "author": "Writer", "publisher": "Press",
+                   "published_at": "2021-01-01", "price": 4.5, "copies_total": 2}
+        created = self.client.post("/api/book", headers=self.headers(self.admin), json=payload)
+        self.assertEqual(created.status_code, 201)
+        self.assertEqual(created.json["book"]["description"], payload["description"])
+        slug = created.json["book"]["slug"]
+        self.assertEqual(self.client.get(f"/api/book/{slug}").json["description"], payload["description"])
+        self.assertEqual(self.client.patch(f"/api/book/{slug}/price", headers=self.headers(self.admin),
+                         json={"price": 5, "description": "Changed"}).status_code, 400)
+        self.assertEqual(self.client.get(f"/api/book/{slug}").json["description"], payload["description"])
 
     def test_creator_profiles_are_immutable_after_creation(self):
         headers = self.headers(self.admin)
