@@ -26,18 +26,15 @@ def get_author(author_id):
     return jsonify(item.to_dict()) if item and not item.is_deleted else error("Author not found", 404)
 
 
-def save_author(author_id=None):
+def save_author():
     try:
         name, description, code = catalog_values()
     except ValueError as exc:
         return error(str(exc))
-    item = db.session.get(Author, author_id) if author_id else Author()
-    if not item or item.is_deleted:
-        return error("Author not found", 404)
-    duplicate = Author.query.filter_by(name=name).first()
-    if duplicate and duplicate.author_id != item.author_id:
+    if Author.query.filter_by(name=name).first():
         return error("Author already exists", 409)
+    item = Author()
     item.name, item.description, item.country_code = name, description, code
     db.session.add(item)
     db.session.commit()
-    return success("Author saved", 200 if author_id else 201, author=item.to_dict())
+    return success("Author saved", 201, author=item.to_dict())

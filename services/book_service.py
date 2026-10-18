@@ -6,21 +6,19 @@ from sqlalchemy.orm import selectinload
 
 from config import db
 from models.Book import Book
-from models.Author import Author
-from models.Publisher import Publisher
 from models.LibraryActivity import LibraryActivity
 from models.reviews.Review import Review
 from sqlalchemy.exc import IntegrityError
 from utils.pagination import page_options, paginate, order_query
 from utils.responses import error, success
-from utils.validation import clean_text, json_body, positive_price, valid_date
+from utils.validation import clean_text, json_body, positive_price
 from enums.books.book_status import BookStatus
 from enums.library.library_action_type import LibraryActionType
 from utils.book_events import emit_book_changed
 from utils.book_lookup import visible_book
 from utils.printing.book_codes import parse_barcode
-from utils.book_input import normalize_book_input, resolve_catalog_people
-from utils.inventory import has_open_work, occupied_copies, locked_book
+from utils.book_input import normalize_book_input, normalize_book_price_input, resolve_catalog_people
+from utils.inventory import has_open_work, locked_book
 from utils.tabular import export_table, import_table
 
 
@@ -187,62 +185,19 @@ def create_book():
     return success("Book added", 201, book=book.to_dict())
 
 
-def update_book(slug):
+def update_book_price(slug):
     candidate = visible_book(slug)
     book = locked_book(candidate.book_id) if candidate else None
     if not book:
         return error("Book not found", 404)
-    data = json_body()
-    for field in ("title", "isbn"):
-        if field in data:
-            value = clean_text(data[field], 255)
-            if not value:
-                return error(f"{field} is required")
-            duplicate = Book.query.filter(getattr(Book, field) == value, Book.book_id != book.book_id).first()
-            if duplicate:
-                return error(f"{field} already exists", 409)
-            setattr(book, field, value)
-    for field, model, id_field in (("author", Author, "author_id"), ("publisher", Publisher, "publisher_id")):
-        if field in data:
-            name = clean_text(data[field], 255)
-            if not name:
-                return error(f"{field} is required")
-            record = model.query.filter_by(name=name, is_deleted=False).first()
-            if not record:
-                record = model(name=name, description="")
-                db.session.add(record)
-                db.session.flush()
-            setattr(book, field, name)
-            setattr(book, id_field, getattr(record, id_field))
-    if "published_at" in data:
-        published = valid_date(data["published_at"])
-        if not published:
-            return error("Invalid publication date")
-        book.published_at = published
-    if "price" in data:
-        price = positive_price(data["price"])
-        if price is None:
-            return error("Price must be positive")
-        book.price = price
-    if "copies_total" in data:
-        copies = data["copies_total"]
-        if type(copies) is not int or not 1 <= copies <= 1000:
-            return error("copies_total must be between 1 and 1000")
-        if copies < occupied_copies(book):
-            return error("Copies cannot be fewer than sales, active loans, and reserved stock")
-        book.copies_total = copies
-    if "condition" in data:
-        if data["condition"] not in {item.value for item in BookStatus}:
-            return error("Unsupported book condition")
-        book.condition = data["condition"]
-    if "book_image" in data:
-        image = clean_text(data["book_image"], 500) or None
-        if image and not (image.startswith("https://") or image.startswith("/static/covers/")):
-            return error("Cover image must use HTTPS")
-        book.book_image = image
+    try:
+        values = normalize_book_price_input(json_body())
+    except ValueError as exc:
+        return error(str(exc))
+    book.price = values["price"]
     db.session.commit()
     emit_book_changed(slug, "book")
-    return success("Book updated", book=book.to_dict())
+    return success("Book price updated", book=book.to_dict())
 
 
 def delete_book(slug):

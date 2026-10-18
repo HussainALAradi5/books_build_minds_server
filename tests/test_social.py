@@ -13,6 +13,7 @@ from constants.library_policy import POLICY_VERSION
 from app import app, socketio  # noqa: E402
 from config import db  # noqa: E402
 from models.Author import Author  # noqa: E402
+from models.Publisher import Publisher  # noqa: E402
 from models.Book import Book  # noqa: E402
 from models.reviews.Review import Review  # noqa: E402
 from models.Media import Media  # noqa: E402
@@ -141,11 +142,15 @@ class SocialTests(unittest.TestCase):
         self.assertEqual(self.client.post(path, headers=self.headers(self.reader), json=payload).status_code, 201)
         self.assertEqual(Review.query.count(), 2)
 
-    def test_only_admin_edits_book_and_catalog_profiles(self):
+    def test_only_admin_changes_price_and_creates_catalog_profiles(self):
         path = "/api/book/a-book"
-        self.assertEqual(self.client.put(path, headers=self.headers(self.reader), json={"title": "New"}).status_code, 403)
-        self.assertEqual(self.client.put(path, headers=self.headers(self.admin), json={"title": "New", "author": "New Writer"}).status_code, 200)
-        self.assertIsNotNone(Author.query.filter_by(name="New Writer").first())
+        price_path = f"{path}/price"
+        self.assertEqual(self.client.patch(price_path, headers=self.headers(self.reader), json={"price": 6}).status_code, 403)
+        self.assertEqual(self.client.patch(price_path, headers=self.headers(self.admin), json={"price": 6}).status_code, 200)
+        self.assertEqual(self.book.price, 6)
+        self.assertEqual(self.client.patch(price_path, headers=self.headers(self.admin),
+                         json={"price": 7, "title": "New"}).status_code, 400)
+        self.assertEqual(self.client.put(path, headers=self.headers(self.admin), json={"title": "New"}).status_code, 405)
         db.session.add(Country(code="BH", name="Bahrain"))
         db.session.commit()
         response = self.client.post("/api/authors", headers=self.headers(self.admin),
@@ -155,6 +160,26 @@ class SocialTests(unittest.TestCase):
         self.assertEqual(self.client.delete(path, headers=self.headers(self.admin)).status_code, 200)
         self.assertTrue(db.session.get(Book, self.book.book_id).is_deleted)
         self.assertEqual(self.client.get(path).status_code, 404)
+
+    def test_creator_profiles_are_immutable_after_creation(self):
+        headers = self.headers(self.admin)
+        author = Author(name="Original Writer", description="")
+        publisher = Publisher(name="Original Press", description="")
+        db.session.add_all([author, publisher])
+        db.session.flush()
+        self.book.author_id, self.book.publisher_id = author.author_id, publisher.publisher_id
+        self.book.author, self.book.publisher = author.name, publisher.name
+        db.session.commit()
+        author_id, publisher_id = author.author_id, publisher.publisher_id
+        self.assertEqual(self.client.put(f"/api/authors/{author_id}", headers=headers,
+                         json={"name": "Renamed Writer", "description": "New biography"}).status_code, 405)
+        self.assertEqual(self.client.put(f"/api/publishers/{publisher_id}", headers=headers,
+                         json={"name": "Renamed Press", "description": "New imprint"}).status_code, 405)
+        detail = self.client.get("/api/book/a-book").json
+        self.assertEqual(detail["author"], "Original Writer")
+        self.assertEqual(detail["publisher"], "Original Press")
+        self.assertEqual(detail["author_details"]["name"], "Original Writer")
+        self.assertEqual(detail["publisher_details"]["name"], "Original Press")
 
     def test_country_sync_maps_provider_records(self):
         payload = b'[{"name":"Bahrain","alpha2Code":"BH","flags":{"svg":"https://example.test/bh.svg"}}]'
@@ -173,7 +198,7 @@ class SocialTests(unittest.TestCase):
         self.assertEqual(User.query.filter_by(user_name="newclient").one().role, AccountRole.CLIENT.value)
         self.other.role = AccountRole.EMPLOYEE.value
         db.session.commit()
-        response = self.client.put("/api/book/a-book", headers=self.headers(self.other), json={"title": "Changed"})
+        response = self.client.patch("/api/book/a-book/price", headers=self.headers(self.other), json={"price": 8})
         self.assertEqual(response.status_code, 403)
 
     def test_admin_can_assign_group_permissions_and_expressions(self):
@@ -198,8 +223,8 @@ class SocialTests(unittest.TestCase):
         self.assertEqual(assignment.status_code, 200)
         self.assertTrue(has_access(self.other, any_of(Permission.BOOK_EDIT_ANY, owns(-1))))
         self.assertFalse(has_access(self.other, all_of(Permission.BOOK_EDIT_ANY, owns(-1))))
-        self.assertEqual(self.client.put("/api/book/a-book", headers=self.headers(self.other),
-                                         json={"title": "Edited by group"}).status_code, 403)
+        self.assertEqual(self.client.patch("/api/book/a-book/price", headers=self.headers(self.other),
+                                           json={"price": 8}).status_code, 403)
         self.assertEqual(self.client.get("/api/access/roles", headers=self.headers(self.other)).status_code, 403)
         self.assertEqual(self.client.put(f"/api/access/users/{self.admin.user_id}", headers=admin_headers,
                                          json={"role": AccountRole.CLIENT.value, "access_role_keys": [],
@@ -225,7 +250,7 @@ class SocialTests(unittest.TestCase):
                                          "access_role_keys": ["delegated-writer"], "group_ids": []})
         self.assertEqual(assigned.status_code, 200)
         headers = self.headers(self.other)
-        for method, path in [("post", "/api/book"), ("put", "/api/book/a-book"),
+        for method, path in [("post", "/api/book"), ("patch", "/api/book/a-book/price"),
                              ("delete", "/api/book/a-book"), ("post", "/api/book/import"),
                              ("post", "/api/book/bulk"), ("post", f"/api/media/books/{self.book.book_id}")]:
             with self.subTest(path=path, method=method):
