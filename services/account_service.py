@@ -17,6 +17,8 @@ from utils.pagination import page_options, paginate, order_query
 from utils.responses import error, success
 from utils.security import create_token
 from utils.validation import clean_text, json_body, valid_password
+from utils.mobile_number import normalize_mobile
+from services.accounts.password_reset_service import find_user
 
 
 def register():
@@ -24,11 +26,18 @@ def register():
     username = clean_text(data.get("user_name"), 80).lower()
     email = clean_text(data.get("email"), 255).lower()
     password = data.get("password")
+    try:
+        mobile = normalize_mobile(data.get("mobile_number"))
+    except ValueError as exc:
+        return error(str(exc))
     if len(username) < 2 or "@" not in email or not valid_password(password):
         return error("Enter a username, valid email, and password with at least 5 letters and 3 numbers")
     if User.query.filter((User.user_name == username) | (User.email == email)).first():
         return error("Username or email already exists", 409)
-    user = User(user_name=username, email=email, password_digest=generate_password_hash(password), role=AccountRole.CLIENT.value, is_active=True)
+    if mobile and User.query.filter_by(mobile_number=mobile).first():
+        return error("Mobile number already exists", 409)
+    user = User(user_name=username, email=email, mobile_number=mobile,
+                password_digest=generate_password_hash(password), role=AccountRole.CLIENT.value, is_active=True)
     db.session.add(user)
     db.session.flush()
     user.created_by = user.user_id
@@ -38,11 +47,11 @@ def register():
 
 def login():
     data = json_body()
-    identifier = clean_text(data.get("user_name_or_email"), 255).lower()
+    identifier = clean_text(data.get("identifier") or data.get("user_name_or_email"), 255)
     password = data.get("password")
     if not identifier or not isinstance(password, str):
         return error("Invalid credentials", 401)
-    user = User.query.filter((User.user_name == identifier) | (User.email == identifier)).first()
+    user = find_user(identifier)
     if not user or not user.is_active or user.is_deleted or user.is_archived or not check_password_hash(user.password_digest, password):
         return error("Invalid credentials", 401)
     return success("Login successful", token=create_token(user), user_id=user.user_id)
@@ -74,6 +83,14 @@ def edit_profile(user_id):
         if User.query.filter(User.email == email, User.user_id != user_id).first():
             return error("Email already exists", 409)
         g.user.email = email
+    if "mobile_number" in data:
+        try:
+            mobile = normalize_mobile(data["mobile_number"])
+        except ValueError as exc:
+            return error(str(exc))
+        if mobile and User.query.filter(User.mobile_number == mobile, User.user_id != user_id).first():
+            return error("Mobile number already exists", 409)
+        g.user.mobile_number = mobile
     if "password" in data:
         if not valid_password(data["password"]):
             return error("Password needs at least 5 letters and 3 numbers")

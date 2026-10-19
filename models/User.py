@@ -16,6 +16,7 @@ class User(BaseEntity, db.Model):
     user_name = Column(String(80), unique=True, nullable=False)
     password_digest = Column(String(255), nullable=False)
     email = Column(String(255), unique=True, nullable=False)
+    mobile_number = Column(String(16), unique=True, nullable=True)
     role = Column(
         Enum(AccountRole, values_callable=lambda roles: [role.value for role in roles],
              native_enum=False, validate_strings=True, length=20),
@@ -56,6 +57,7 @@ class User(BaseEntity, db.Model):
             "user_id": self.user_id,
             "user_name": self.user_name,
             "email": self.email,
+            "mobile_number": self.mobile_number,
             "is_active": self.is_active,
             "role": self.role.value,
             "permissions": sorted(permissions_for_user(self)),

@@ -55,6 +55,14 @@ Access rules use persistent permission keys, roles, and groups. `all_of`, `any_o
 
 Country records can be synced through `POST /api/countries/sync` from [countries.dev](https://countries.dev/docs/api/countries). Admin inventory endpoints provide import, export to PDF/XLSX/CSV, and bulk actions.
 
+## Login and password recovery
+
+Login requires a password and accepts email, username, or an optional international mobile number such as `+97312345678`. Registration accepts that mobile number but does not require it. Existing author and publisher profiles reference the locally cached country table; sync countries before selecting one in the admin form.
+
+For local recovery testing, set `PASSWORD_RESET_DELIVERY=console` in `.env` and restart Flask. Request a code at `POST /api/password-reset/request` with `{"identifier":"demo_client"}`. The six-digit code appears in the Flask terminal and expires after 10 minutes. Submit `{"identifier":"demo_client","code":"123456","new_password":"Newpass123"}` to `POST /api/password-reset/confirm`, replacing the example code with the generated one. This changes the account password, so reseed test passwords before continuing demo walkthroughs.
+
+For email delivery, set `RESEND_API_KEY` and `RESEND_FROM_EMAIL` in the server's `.env` using a verified sender. Codes go to the account's saved email even when a mobile number identifies it. No SMS provider is integrated. See the [external API inventory](https://github.com/HussainALAradi5/books_build_minds_documentation/blob/main/integrations/external-apis.md).
+
 ## Verify
 
 ```powershell

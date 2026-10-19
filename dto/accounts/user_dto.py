@@ -5,6 +5,7 @@ class UserDTO(BaseEntityDTO):
     user_id: int
     user_name: str
     email: str
+    mobile_number: str | None
     is_active: bool
     role: str
     permissions: list[str]

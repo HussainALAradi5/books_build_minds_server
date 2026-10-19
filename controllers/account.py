@@ -1,11 +1,14 @@
 from flask import Blueprint
 from services import account_service
+from services.accounts import password_reset_service
 from utils.security import require_user
 from enums.accounts.permission import Permission
 
 account = Blueprint("account", __name__)
 account.add_url_rule("/register", view_func=account_service.register, methods=["POST"])
 account.add_url_rule("/login", view_func=account_service.login, methods=["POST"])
+account.add_url_rule("/password-reset/request", view_func=password_reset_service.issue_code, methods=["POST"])
+account.add_url_rule("/password-reset/confirm", view_func=password_reset_service.confirm_code, methods=["POST"])
 account.add_url_rule("/profile/<int:user_id>", view_func=require_user(Permission.PROFILE_READ_OWN, owner_param="user_id")(account_service.profile), methods=["GET"])
 account.add_url_rule("/profile/<int:user_id>/edit", view_func=require_user(Permission.PROFILE_EDIT_OWN, owner_param="user_id")(account_service.edit_profile), methods=["PUT"])
 account.add_url_rule("/profile/<int:user_id>/books", view_func=require_user(Permission.PURCHASE_READ_OWN, owner_param="user_id")(account_service.purchased_books), methods=["GET"])

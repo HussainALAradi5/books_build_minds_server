@@ -12,6 +12,7 @@ def initialize_limits(app):
     limiter = Limiter(get_remote_address, app=app, storage_uri=storage, default_limits=["1200 per minute"])
     limiter.exempt(app.view_functions["payments.webhook"])
     for endpoint, rule in {"account.login": "20 per minute", "account.register": "10 per minute",
+                           "account.issue_code": "5 per 10 minutes", "account.confirm_code": "10 per 10 minutes",
                            "payments.checkout": "10 per minute", "payments.sync": "30 per minute",
                            "payments.cancel": "10 per minute"}.items():
         app.view_functions[endpoint] = limiter.limit(rule)(app.view_functions[endpoint])
