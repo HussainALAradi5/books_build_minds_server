@@ -10,8 +10,8 @@ os.environ["JWT_SECRET_KEY"] = "test-only-secret-long-enough-for-hs256"
 
 from app import app
 from config import db
-from models.Book import Book
-from models.User import User
+from models.catalog.Book import Book
+from models.accounts.User import User
 from utils.printing.book_codes import book_url
 
 

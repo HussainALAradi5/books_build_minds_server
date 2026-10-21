@@ -10,14 +10,14 @@ from dto.reviews.review_update_dto import ReviewUpdateDTO
 from enums.accounts.permission import Permission
 from enums.accounts.account_role import AccountRole
 from models.reviews.Review import Review
-from models.User import User
-from utils.access import all_of, any_of, has_access, has_role, owns, purchased
-from utils.book_events import emit_book_changed
-from utils.book_lookup import visible_book
-from utils.pagination import order_query, page_options, paginate
-from utils.responses import error, success
-from utils.validation import clean_text, json_body, valid_rating
-from utils.security import current_user
+from models.accounts.User import User
+from utils.access.access import all_of, any_of, has_access, has_role, owns, purchased
+from utils.books.book_events import emit_book_changed
+from utils.books.book_lookup import visible_book
+from utils.shared.pagination import order_query, page_options, paginate
+from utils.shared.responses import error, success
+from utils.shared.validation import clean_text, json_body, valid_rating
+from utils.accounts.security import current_user
 
 
 def list_reviews(slug):

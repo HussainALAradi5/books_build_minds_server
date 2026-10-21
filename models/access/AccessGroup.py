@@ -1,5 +1,5 @@
 from config import db
-from models.BaseEntity import BaseEntity
+from models.shared.BaseEntity import BaseEntity
 from models.access.associations import access_group_role, user_access_group
 from dto.access.group_dto import GroupDTO
 

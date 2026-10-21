@@ -4,15 +4,15 @@ from config import db
 from constants.library_policy import RENTAL_DAYS
 from enums.payments.transaction_kind import TransactionKind
 from enums.payments.transaction_status import TransactionStatus
-from models.LibraryActivity import LibraryActivity
-from models.Loan import Loan
+from models.library.LibraryActivity import LibraryActivity
+from models.library.Loan import Loan
 from models.payments.Transaction import Transaction
 from models.payments.PaymentEvent import PaymentEvent
 from models.receipts.Receipt import Receipt
 from services.payments import tap_gateway
-from utils.inventory import locked_book
+from utils.books.inventory import locked_book
 from utils.payments.errors import PaymentError
-from utils.book_events import emit_book_changed
+from utils.books.book_events import emit_book_changed
 
 def apply_session(session, event_id=None, event_type="reconcile"):
     reference = session.get("client_reference_id")

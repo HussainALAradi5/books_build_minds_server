@@ -7,11 +7,11 @@ from config import db
 from constants.library_policy import CURRENCY, CURRENCY_SCALE, POLICY_VERSION
 from enums.payments.transaction_kind import TransactionKind
 from enums.payments.transaction_status import TransactionStatus
-from models.Book import Book
-from models.Loan import Loan
+from models.catalog.Book import Book
+from models.library.Loan import Loan
 from models.payments.Transaction import Transaction
 from services.payments import tap_gateway
-from utils.inventory import locked_book, occupied_copies
+from utils.books.inventory import locked_book, occupied_copies
 from utils.payments.errors import PaymentError
 from utils.payments.money import price_minor
 
@@ -80,7 +80,7 @@ def ensure_checkout(item):
     item.provider_charge_id = session["id"]
     item.checkout_url = session.get("url")
     db.session.commit()
-    from utils.book_events import emit_book_changed
+    from utils.books.book_events import emit_book_changed
     emit_book_changed(book.slug, "inventory")
     from services.payments.fulfillment_service import apply_session
     return apply_session(session)

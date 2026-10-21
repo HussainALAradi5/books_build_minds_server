@@ -1,15 +1,9 @@
 from .payments.Transaction import Transaction
 from .payments.PaymentEvent import PaymentEvent
-from . import User
-from . import PasswordResetCode
-from . import Book
+from .accounts import User, PasswordResetCode, AdminRequest
+from .catalog import Book, Country, Author, Publisher
 from .reviews import Review
 from .receipts import Receipt
-from . import AdminRequest
-from . import Media
-from . import Loan
-from . import LibraryActivity
-from . import Country
-from . import Author
-from . import Publisher
+from .media import Media
+from .library import Loan, LibraryActivity
 from .access import AccessPermission, AccessRole, AccessGroup  # noqa: F401

@@ -16,16 +16,16 @@ from payment_fixture import pay
 from constants.library_policy import POLICY_VERSION
 from app import app  # noqa: E402
 from config import db  # noqa: E402
-from models.Book import Book  # noqa: E402
+from models.catalog.Book import Book  # noqa: E402
 from models.reviews.Review import Review  # noqa: E402
-from models.User import User  # noqa: E402
-from models.Media import Media  # noqa: E402
-from models.Loan import Loan  # noqa: E402
-from models.LibraryActivity import LibraryActivity  # noqa: E402
+from models.accounts.User import User  # noqa: E402
+from models.media.Media import Media  # noqa: E402
+from models.library.Loan import Loan  # noqa: E402
+from models.library.LibraryActivity import LibraryActivity  # noqa: E402
 from enums.media.media_type import MediaType  # noqa: E402
 from werkzeug.security import generate_password_hash  # noqa: E402
-from utils.security import create_token  # noqa: E402
-from services import media_service  # noqa: E402
+from utils.accounts.security import create_token  # noqa: E402
+from services.media import media_service  # noqa: E402
 from config import BASE_DIR  # noqa: E402
 
 

@@ -4,7 +4,7 @@ from sqlalchemy.orm import relationship
 
 from config import db
 from dto.reviews.review_dto import ReviewDTO
-from models.BaseEntity import BaseEntity
+from models.shared.BaseEntity import BaseEntity
 
 
 class Review(BaseEntity, db.Model):

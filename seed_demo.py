@@ -9,9 +9,9 @@ from werkzeug.security import generate_password_hash
 
 from config import app, db
 from enums.accounts.account_role import AccountRole
-from models.Book import Book
-from models.User import User
-from utils.book_input import resolve_catalog_people
+from models.catalog.Book import Book
+from models.accounts.User import User
+from utils.books.book_input import resolve_catalog_people
 from constants.demo_book_descriptions import DEMO_BOOK_DESCRIPTIONS
 
 BOOKS = [

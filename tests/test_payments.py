@@ -12,14 +12,14 @@ os.environ["DATABASE_URL"] = "sqlite:///:memory:"
 os.environ["JWT_SECRET_KEY"] = "test-only-secret-long-enough-for-hs256"
 from app import app, limiter
 from config import db
-from models.User import User
-from models.Book import Book
-from models.Loan import Loan
+from models.accounts.User import User
+from models.catalog.Book import Book
+from models.library.Loan import Loan
 from models.payments.Transaction import Transaction
 from models.payments.PaymentEvent import PaymentEvent
 from models.receipts.Receipt import Receipt
 from constants.library_policy import POLICY_VERSION
-from utils.security import create_token
+from utils.accounts.security import create_token
 from services.payments.fulfillment_service import apply_session
 from payment_fixture import checkout, pay, provider_session
 

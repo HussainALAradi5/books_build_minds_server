@@ -1,6 +1,6 @@
 from sqlalchemy import Column, String, ForeignKey
 from config import db
-from models.BaseEntity import BaseEntity
+from models.shared.BaseEntity import BaseEntity
 
 class PaymentEvent(BaseEntity, db.Model):
     __tablename__ = "payment_event"

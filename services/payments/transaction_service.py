@@ -6,7 +6,7 @@ from models.payments.Transaction import Transaction
 from services.payments import tap_gateway
 from services.payments.checkout_service import ensure_checkout
 from services.payments.fulfillment_service import apply_session, retry_refund
-from utils.pagination import page_options, paginate, order_query
+from utils.shared.pagination import page_options, paginate, order_query
 from utils.payments.errors import PaymentError
 
 def owned_transaction(transaction_id):

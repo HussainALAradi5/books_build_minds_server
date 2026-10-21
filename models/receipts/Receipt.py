@@ -3,7 +3,7 @@ from sqlalchemy import Column, Date, ForeignKey, Integer, String, UniqueConstrai
 from sqlalchemy.orm import relationship
 
 from config import db
-from models.BaseEntity import BaseEntity
+from models.shared.BaseEntity import BaseEntity
 from dto.receipts.receipt_dto import ReceiptDTO
 
 

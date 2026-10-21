@@ -2,7 +2,7 @@ from uuid import uuid4
 from sqlalchemy import Column, DateTime, ForeignKey, Integer, String, UniqueConstraint, CheckConstraint
 from sqlalchemy.orm import relationship
 from config import db
-from models.BaseEntity import BaseEntity
+from models.shared.BaseEntity import BaseEntity
 from dto.payments.transaction_dto import TransactionDTO
 from enums.payments.transaction_status import TransactionStatus
 

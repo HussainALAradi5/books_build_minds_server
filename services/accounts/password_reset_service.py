@@ -8,12 +8,12 @@ from flask import current_app
 from werkzeug.security import generate_password_hash
 
 from config import db
-from models.PasswordResetCode import PasswordResetCode
-from models.User import User
+from models.accounts.PasswordResetCode import PasswordResetCode
+from models.accounts.User import User
 from services.accounts.reset_delivery import delivery_ready, send_reset_code
-from utils.mobile_number import normalize_mobile
-from utils.responses import error, success
-from utils.validation import clean_text, json_body, valid_password
+from utils.accounts.mobile_number import normalize_mobile
+from utils.shared.responses import error, success
+from utils.shared.validation import clean_text, json_body, valid_password
 
 GENERIC_RESPONSE = "If this account exists, a reset code was sent to its saved email address."
 

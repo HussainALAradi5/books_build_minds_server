@@ -1,9 +1,9 @@
 from flask import jsonify
 from constants.library_policy import BORROW_DAYS, RENTAL_DAYS, POLICY_VERSION, CURRENCY, CURRENCY_SCALE
 from dto.library.loan_quote_dto import LoanQuoteDTO
-from utils.book_lookup import visible_book
+from utils.books.book_lookup import visible_book
 from utils.payments.money import price_minor
-from utils.responses import error
+from utils.shared.responses import error
 
 def loan_quote(slug):
     book = visible_book(slug)

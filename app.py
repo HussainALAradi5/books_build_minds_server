@@ -4,16 +4,16 @@ from flask import request
 from config import app, db
 from config import socketio
 from flask_socketio import join_room
-from models.Book import Book
-from utils.book_events import book_room
+from models.catalog.Book import Book
+from utils.books.book_events import book_room
 from controllers.payments.routes import payments
-from controllers.account import account
-from controllers.books import books
-from controllers.media import media
-from controllers.loans import loans
+from controllers.accounts.account import account
+from controllers.books.books import books
+from controllers.media.media import media
+from controllers.library.loans import loans
 from controllers.reviews.routes import reviews
 from controllers.receipts.routes import receipts
-from controllers.catalog import catalog
+from controllers.catalog.catalog import catalog
 from controllers.access.routes import access
 import models  # noqa: F401 - registers SQLAlchemy models for migrations
 
@@ -50,12 +50,12 @@ if __name__ == "__main__":
 import seed_demo  # noqa: F401 - registers CLI seed command
 
 import services.payments.reconciliation_cli  # noqa: F401
-from utils.security_limits import initialize_limits
+from utils.shared.security_limits import initialize_limits
 limiter = initialize_limits(app)
 
 from sqlalchemy.exc import IntegrityError, OperationalError
 from sqlalchemy.orm.exc import StaleDataError
-from utils.responses import error
+from utils.shared.responses import error
 
 @app.errorhandler(IntegrityError)
 @app.errorhandler(StaleDataError)

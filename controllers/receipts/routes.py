@@ -1,7 +1,7 @@
 from flask import Blueprint
 
 from services.receipts import receipt_service
-from utils.security import require_user
+from utils.accounts.security import require_user
 from enums.accounts.permission import Permission
 
 receipts = Blueprint("receipts", __name__)

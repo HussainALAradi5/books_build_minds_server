@@ -5,10 +5,10 @@ from services.payments import tap_gateway, transaction_service
 from services.payments.checkout_service import start_checkout
 from services.payments.fulfillment_service import apply_session
 from services.receipts.receipt_service import download_transaction_receipt
-from utils.security import require_user
+from utils.accounts.security import require_user
 from utils.payments.errors import PaymentError
-from utils.responses import error
-from utils.validation import json_body
+from utils.shared.responses import error
+from utils.shared.validation import json_body
 
 payments = Blueprint("payments", __name__)
 
@@ -26,7 +26,7 @@ def invalid_input(_exc):
 @require_user()
 def checkout():
     from flask import g
-    from utils.access import has_access
+    from utils.access.access import has_access
     data = json_body()
     permission = Permission.LOAN_WRITE_ONE if data.get("kind") == "rental" else Permission.PURCHASE_WRITE_ONE
     if not has_access(g.user, permission):

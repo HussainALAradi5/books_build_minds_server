@@ -12,10 +12,10 @@ os.environ["JWT_SECRET_KEY"] = "test-only-secret-long-enough-for-hs256"
 
 from app import app, limiter  # noqa: E402
 from config import db  # noqa: E402
-from models.PasswordResetCode import PasswordResetCode  # noqa: E402
-from models.User import User  # noqa: E402
+from models.accounts.PasswordResetCode import PasswordResetCode  # noqa: E402
+from models.accounts.User import User  # noqa: E402
 from services.accounts.reset_delivery import send_reset_code  # noqa: E402
-from utils.security import create_token  # noqa: E402
+from utils.accounts.security import create_token  # noqa: E402
 
 
 class PasswordResetTests(unittest.TestCase):

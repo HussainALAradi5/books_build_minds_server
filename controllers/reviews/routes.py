@@ -1,8 +1,8 @@
 from flask import Blueprint
 from services.reviews import review_service
-from utils.security import require_user
+from utils.accounts.security import require_user
 from enums.accounts.permission import Permission
-from utils.access import any_of
+from utils.access.access import any_of
 
 reviews = Blueprint("reviews", __name__)
 reviews.add_url_rule("/book/<string:slug>/review", view_func=review_service.list_reviews, methods=["GET"])

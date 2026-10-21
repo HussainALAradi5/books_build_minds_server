@@ -12,18 +12,18 @@ from payment_fixture import pay
 from constants.library_policy import POLICY_VERSION
 from app import app, socketio  # noqa: E402
 from config import db  # noqa: E402
-from models.Author import Author  # noqa: E402
-from models.Publisher import Publisher  # noqa: E402
-from models.Book import Book  # noqa: E402
+from models.catalog.Author import Author  # noqa: E402
+from models.catalog.Publisher import Publisher  # noqa: E402
+from models.catalog.Book import Book  # noqa: E402
 from models.reviews.Review import Review  # noqa: E402
-from models.Media import Media  # noqa: E402
-from models.Country import Country  # noqa: E402
-from models.User import User  # noqa: E402
+from models.media.Media import Media  # noqa: E402
+from models.catalog.Country import Country  # noqa: E402
+from models.accounts.User import User  # noqa: E402
 from enums.accounts.account_role import AccountRole  # noqa: E402
 from enums.accounts.permission import Permission  # noqa: E402
 from enums.media.media_type import MediaType  # noqa: E402
-from utils.access import all_of, any_of, has_access, owns  # noqa: E402
-from utils.security import create_token  # noqa: E402
+from utils.access.access import all_of, any_of, has_access, owns  # noqa: E402
+from utils.accounts.security import create_token  # noqa: E402
 from seed_demo import TEST_PASSWORDS  # noqa: E402
 
 
@@ -90,7 +90,7 @@ class SocialTests(unittest.TestCase):
         result = app.test_cli_runner().invoke(args=["seed-demo", "--test-accounts"])
         self.assertEqual(result.exit_code, 0, result.output)
         from seed_demo import BOOKS
-        from models.Publisher import Publisher
+        from models.catalog.Publisher import Publisher
         for _, isbn, _, _, _, _ in BOOKS:
             seeded = Book.query.filter_by(isbn=isbn).one()
             self.assertIsNotNone(seeded.author_id)
@@ -217,7 +217,7 @@ class SocialTests(unittest.TestCase):
 
     def test_country_sync_maps_provider_records(self):
         payload = b'[{"name":"Bahrain","alpha2Code":"BH","flags":{"svg":"https://example.test/bh.svg"}}]'
-        with patch("services.country_service.urlopen", return_value=BytesIO(payload)):
+        with patch("services.catalog.country_service.urlopen", return_value=BytesIO(payload)):
             response = self.client.post("/api/countries/sync", headers=self.headers(self.admin))
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json["count"], 1)

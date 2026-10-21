@@ -3,10 +3,10 @@ from flask import jsonify, send_file
 
 from dto.books.book_codes_dto import BookCodesDTO
 from enums.books.barcode_type import BarcodeType
-from utils.book_lookup import visible_book
+from utils.books.book_lookup import visible_book
 from utils.printing.book_codes import barcode_drawing, barcode_value, book_url, qr_drawing, svg_data_url
 from utils.printing.book_pdf import render_book_pdf
-from utils.responses import error
+from utils.shared.responses import error
 
 
 def get_book_codes(slug: str):

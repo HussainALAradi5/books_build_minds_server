@@ -1,8 +1,8 @@
 from flask import jsonify, request
 
-from utils.pagination import order_query, page_options, paginate
-from utils.responses import error
-from utils.validation import clean_text
+from utils.shared.pagination import order_query, page_options, paginate
+from utils.shared.responses import error
+from utils.shared.validation import clean_text
 
 
 def list_records(model, search_column, sort_column):

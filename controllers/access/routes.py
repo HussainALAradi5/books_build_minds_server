@@ -3,8 +3,8 @@ from flask import Blueprint
 from enums.accounts.permission import Permission
 from enums.accounts.account_role import AccountRole
 from services.access import group_service, permission_service, role_service, user_access_service
-from utils.security import require_user
-from utils.access import all_of, has_role
+from utils.accounts.security import require_user
+from utils.access.access import all_of, has_role
 
 access = Blueprint("access", __name__)
 

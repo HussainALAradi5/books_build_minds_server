@@ -3,11 +3,11 @@ from flask import g, jsonify, request
 from config import db
 from dto.access.user_access_dto import UserAccessDTO
 from enums.accounts.account_role import AccountRole
-from models.User import User
-from utils.access_input import resolve_groups, resolve_roles
-from utils.pagination import order_query, page_options, paginate
-from utils.responses import error, success
-from utils.validation import clean_text, json_body
+from models.accounts.User import User
+from utils.access.access_input import resolve_groups, resolve_roles
+from utils.shared.pagination import order_query, page_options, paginate
+from utils.shared.responses import error, success
+from utils.shared.validation import clean_text, json_body
 
 
 def serialize_user(user: User) -> UserAccessDTO:

@@ -1,8 +1,8 @@
 """Receipt documents use immutable payment snapshots, never today's catalog price."""
 from flask import g, send_file
-from models.Book import Book
+from models.catalog.Book import Book
 from models.receipts.Receipt import Receipt
-from utils.responses import error
+from utils.shared.responses import error
 from utils.printing.receipt_pdf import render_receipt
 
 def download_receipt(slug):

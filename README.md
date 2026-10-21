@@ -42,11 +42,11 @@ Use the migration command on a new or existing database; back up an existing dat
 
 | Path | Purpose |
 | --- | --- |
-| `controllers` | `/api` route registration and access guards |
-| `services` | Library business logic and database operations |
-| `models` and `migrations` | SQLAlchemy entities and ordered Alembic revisions |
+| `controllers` | Domain-grouped `/api` route registration and access guards |
+| `services` | Domain-grouped library business logic and database operations |
+| `models` and `migrations` | Domain-grouped SQLAlchemy entities (accounts, catalog, library, media, reviews, payments, receipts, access) and ordered Alembic revisions |
 | `dto` | API request and response shapes |
-| `enums`, `constants`, `utils` | Shared states, permission defaults, validation, pagination, response helpers, and access expressions |
+| `enums`, `constants`, `utils` | Domain-grouped states, permission defaults, validation, pagination, response helpers, and access expressions |
 | `tests` | Logic and API tests |
 
 The API supports books, authors, publishers, countries, media, purchases and receipts, borrow/rent/return workflows, and purchase-gated reviews. Reviews use Socket.IO updates. Mutations use archive or soft delete where applicable. `BaseEntity` carries creator, updater, timestamps, `is_archived`, and `is_deleted`. List endpoints use server-side filters, sorting, and pagination.

@@ -3,9 +3,9 @@ from flask import request
 from config import db
 from models.access.AccessRole import AccessRole
 from services.access.common import list_records
-from utils.access_input import KEY_PATTERN, resolve_permissions
-from utils.responses import error, success
-from utils.validation import clean_text, json_body
+from utils.access.access_input import KEY_PATTERN, resolve_permissions
+from utils.shared.responses import error, success
+from utils.shared.validation import clean_text, json_body
 
 
 def list_roles():

@@ -3,9 +3,9 @@ from flask import request
 from config import db
 from models.access.AccessPermission import AccessPermission
 from services.access.common import list_records
-from utils.access_input import PERMISSION_PATTERN
-from utils.responses import error, success
-from utils.validation import clean_text, json_body
+from utils.access.access_input import PERMISSION_PATTERN
+from utils.shared.responses import error, success
+from utils.shared.validation import clean_text, json_body
 
 
 def list_permissions():

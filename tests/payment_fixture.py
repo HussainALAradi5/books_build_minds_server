@@ -5,10 +5,10 @@ from unittest.mock import patch
 from flask import g
 from config import app, db
 from constants.library_policy import POLICY_VERSION
-from models.Book import Book
+from models.catalog.Book import Book
 from models.payments.Transaction import Transaction
 from services.payments.fulfillment_service import apply_session
-from utils.security import create_token
+from utils.accounts.security import create_token
 from utils.payments.money import price_minor
 
 def provider_session(item, paid=True, status=None):
