@@ -70,7 +70,7 @@ For email delivery, set `RESEND_API_KEY` and `RESEND_FROM_EMAIL` in the server's
 .\.venv\Scripts\flask.exe --app app db check
 ```
 
-See [ordered migrations](https://github.com/HussainALAradi5/books_build_minds_documentation/blob/main/database/migrations.md), [feature endpoint tables](https://github.com/HussainALAradi5/books_build_minds_documentation/blob/main/README.md), and the [client screenshots](https://github.com/HussainALAradi5/books_build_minds_client_side/blob/main/docs/screenshots/README.md). No GitHub remote is configured yet; add one after creating the server GitHub repository.
+See [ordered migrations](https://github.com/HussainALAradi5/books_build_minds_documentation/blob/main/database/migrations.md), [feature endpoint tables](https://github.com/HussainALAradi5/books_build_minds_documentation/blob/main/README.md), and the [client screenshots](https://github.com/HussainALAradi5/books_build_minds_client_side/blob/main/docs/screenshots/README.md).
 
 ## Security
 

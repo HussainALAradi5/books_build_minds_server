@@ -13,6 +13,7 @@ from models.catalog.Book import Book
 from models.accounts.User import User
 from utils.books.book_input import resolve_catalog_people
 from constants.demo_book_descriptions import DEMO_BOOK_DESCRIPTIONS
+from services.catalog.demo_catalog_service import enrich_demo_catalog
 
 BOOKS = [
     ("The Midnight Library", "9780525559474", "Matt Haig", "Viking", date(2020, 9, 29), 7.50),
@@ -66,6 +67,7 @@ def seed_demo(reset_passwords: bool, test_accounts: bool):
         click.echo(f"Demo {role.value}: {username} / {password}" if active else f"Demo visitor: {username} (inactive)")
     db.session.flush()
     admin = User.query.filter_by(email="demo-admin@example.test").one()
+    enrich_demo_catalog()
     for title, isbn, author, publisher, published, price in BOOKS:
         existing = Book.query.filter_by(isbn=isbn).first()
         if existing:
