@@ -84,6 +84,12 @@ class SecurityTests(unittest.TestCase):
         self.assertEqual(response.json["pagination"]["total"], 1)
         self.assertEqual(response.json["items"][0]["slug"], "other-book")
 
+    def test_excessive_page_is_rejected_across_paginated_endpoints(self):
+        for path in ("/api/", "/api/book/one-book/review"):
+            response = self.client.get(f"{path}?page=9999999999999999999999")
+            self.assertEqual(response.status_code, 400)
+            self.assertIn("page", response.json["error"])
+
     def test_multiple_media_upload_is_server_validated(self):
         self.user.is_admin = True
         db.session.commit()

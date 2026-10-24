@@ -1,6 +1,6 @@
 # Books Builds Minds — server repository
 
-This is the **server** repository for Books Builds Minds. The matching [client repository](https://github.com/HussainALAradi5/books_build_minds_client_side/blob/main/README.md) is a Next.js and Chakra UI application. The separate [documentation repository](https://github.com/HussainALAradi5/books_build_minds_documentation/blob/main/README.md) maps service signatures, business rules, endpoints, and errors. The related repository links point to the published GitHub repositories.
+This is the **server** repository for Books Builds Minds. The matching [client repository](https://github.com/HussainALAradi5/books_build_minds_client_side/blob/main/README.md) is a Next.js and Chakra UI application. The separate [documentation repository](https://github.com/HussainALAradi5/books_build_minds_documentation/blob/main/README.md) maps service signatures, business rules, endpoints, and errors. The [Flutter mobile repository](https://github.com/HussainALAradi5/books_build_minds_mobile/blob/main/README.md) uses this API directly. The related repository links point to the published GitHub repositories.
 
 ## Related repositories
 
@@ -8,6 +8,7 @@ This is the **server** repository for Books Builds Minds. The matching [client r
 | --- | --- | --- |
 | Server | This repository | Flask API, models, migrations, services, and tests |
 | Client | [Open client repository](https://github.com/HussainALAradi5/books_build_minds_client_side/blob/main/README.md) | Next.js application and workflow screenshots |
+| Mobile | [Open Flutter repository](https://github.com/HussainALAradi5/books_build_minds_mobile/blob/main/README.md) | Mobile reader workflows and Android build |
 | Documentation | [Open documentation repository](https://github.com/HussainALAradi5/books_build_minds_documentation/blob/main/README.md) | Architecture, setup, service signatures, endpoints, and errors |
 
 The related repository links point to the published GitHub repositories.

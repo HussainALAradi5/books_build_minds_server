@@ -4,6 +4,8 @@ from dataclasses import dataclass
 from flask import request
 from enums.shared.sort_direction import SortDirection
 
+MAX_PAGE = 100_000
+
 
 @dataclass(frozen=True)
 class PageOptions:
@@ -26,8 +28,11 @@ def page_options(default_size=12, max_size=50):
     direction = request.args.get("sort_direction", SortDirection.DESC.value)
     if direction not in {item.value for item in SortDirection}:
         raise ValueError("sort_direction must be asc or desc")
+    page = positive_int("page", 1)
+    if page > MAX_PAGE:
+        raise ValueError(f"page must be {MAX_PAGE} or less")
     return PageOptions(
-        page=positive_int("page", 1),
+        page=page,
         per_page=min(positive_int("per_page", default_size), max_size),
         sort_direction=SortDirection(direction),
     )
