@@ -1,7 +1,6 @@
 """Idempotent development data. Run: flask --app app seed-demo."""
 import os
 import secrets
-from datetime import date
 
 import click
 from flask.cli import with_appcontext
@@ -13,16 +12,8 @@ from models.catalog.Book import Book
 from models.accounts.User import User
 from utils.books.book_input import resolve_catalog_people
 from constants.demo_book_descriptions import DEMO_BOOK_DESCRIPTIONS
+from constants.demo_books import BOOKS, DEMO_BOOK_CONDITIONS, DEMO_BOOK_COPIES
 from services.catalog.demo_catalog_service import enrich_demo_catalog
-
-BOOKS = [
-    ("The Midnight Library", "9780525559474", "Matt Haig", "Viking", date(2020, 9, 29), 7.50),
-    ("Atomic Habits", "9780735211292", "James Clear", "Avery", date(2018, 10, 16), 8.90),
-    ("The Alchemist", "9780062315007", "Paulo Coelho", "HarperOne", date(2014, 4, 15), 5.25),
-    ("Educated", "9780399590504", "Tara Westover", "Random House", date(2018, 2, 20), 9.75),
-    ("Deep Work", "9781455586691", "Cal Newport", "Grand Central", date(2016, 1, 5), 6.80),
-    ("Sapiens", "9780062316097", "Yuval Noah Harari", "Harper", date(2015, 2, 10), 10.20),
-]
 
 TEST_PASSWORDS = {
     "demo_admin": "LibraryAdmin2026!",
@@ -82,7 +73,10 @@ def seed_demo(reset_passwords: bool, test_accounts: bool):
         author_record, publisher_record = resolve_catalog_people(author, publisher)
         db.session.add(Book(title=title, description=DEMO_BOOK_DESCRIPTIONS.get(isbn, ""), slug=title.lower().replace(" ", "-"), isbn=isbn, author=author,
             publisher=publisher, author_id=author_record.author_id, publisher_id=publisher_record.publisher_id,
-            published_at=published, price=price, added_by_user_id=admin.user_id))
+            published_at=published, price=price,
+            copies_total=DEMO_BOOK_COPIES.get(isbn, 1),
+            condition=DEMO_BOOK_CONDITIONS.get(isbn, "good"),
+            added_by_user_id=admin.user_id))
     db.session.commit()
     click.echo("Demo books ready")
 

@@ -39,6 +39,8 @@ Use the migration command on a new or existing database; back up an existing dat
 
 `demo_visitor` is an inactive record; an anonymous visitor can browse and register. Employee and client start with the same member permissions. An administrator may assign extra access roles and groups; the access management page and API still require the administrator account role.
 
+The idempotent demo seed contains 18 books, including 12 clearly fictional test titles with varied conditions, prices, and copy counts. Their author and publisher profiles share books so the creator dialogs show multiple works. Re-run `flask --app app seed-demo` to add missing catalog records without resetting existing account passwords.
+
 ## Structure and behavior
 
 | Path | Purpose |
