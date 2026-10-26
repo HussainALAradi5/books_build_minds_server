@@ -28,13 +28,13 @@ def get_publisher(publisher_id):
 
 def save_publisher():
     try:
-        name, description, code = catalog_values()
+        name, description, address, code = catalog_values()
     except ValueError as exc:
         return error(str(exc))
     if Publisher.query.filter_by(name=name).first():
         return error("Publisher already exists", 409)
     item = Publisher()
-    item.name, item.description, item.country_code = name, description, code
+    item.name, item.description, item.address, item.country_code = name, description, address, code
     db.session.add(item)
     db.session.commit()
     return success("Publisher saved", 201, publisher=item.to_dict())

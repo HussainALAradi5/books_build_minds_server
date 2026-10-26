@@ -56,7 +56,7 @@ The API supports books, authors, publishers, countries, media, purchases and rec
 
 Access rules use persistent permission keys, roles, and groups. `all_of`, `any_of`, ownership, and purchase checks are evaluated by the server. Registration defaults to the `client` account role; demo seeding also creates admin, employee, and inactive visitor records. Built-in roles and permissions are seeded by migration `c9f1d82b0008`. Only authorized administrators can manage access records. The admin UI is at `/admin/access` in the client.
 
-Country records can be synced through `POST /api/countries/sync` from [countries.dev](https://countries.dev/docs/api/countries). Admin inventory endpoints provide import, export to PDF/XLSX/CSV, and bulk actions.
+Country records can be synced through `POST /api/countries/sync` from [countries.dev](https://countries.dev/docs/api/countries). Authors and publishers have optional addresses and server-paginated search. Administrators create categories separately; each book can have one to five categories. The public catalog filters by category, ranks by average active review rating or completed purchases, and exposes paginated top-five category groups. Admin inventory endpoints provide import, export to PDF/XLSX/CSV, and bulk actions.
 
 ## Login and password recovery
 

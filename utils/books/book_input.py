@@ -1,11 +1,11 @@
 """Validation and relationship resolution shared by single and bulk book creation."""
-from config import db
 from dto.books.book_input_dto import BookInputDTO
 from dto.books.book_price_input_dto import BookPriceInputDTO
 from enums.books.book_status import BookStatus
 from models.catalog.Author import Author
 from models.catalog.Publisher import Publisher
 from utils.shared.validation import clean_text, positive_price, valid_date
+from utils.catalog.category_input import category_ids
 
 
 def normalize_book_input(data) -> BookInputDTO:
@@ -28,7 +28,7 @@ def normalize_book_input(data) -> BookInputDTO:
     image = clean_text(data.get("book_image"), 500) or None
     if image and not (image.startswith("https://") or image.startswith("/static/covers/")):
         raise ValueError("Cover image must use HTTPS")
-    return {**values, "description": description, "published_at": published, "price": price, "copies_total": copies_total,
+    return {**values, "description": description, "category_ids": category_ids(data.get("category_ids")), "published_at": published, "price": price, "copies_total": copies_total,
             "condition": condition, "book_image": image}
 
 
@@ -42,13 +42,10 @@ def normalize_book_price_input(data: object) -> BookPriceInputDTO:
 
 
 def resolve_catalog_people(author_name: str, publisher_name: str):
-    author = Author.query.filter_by(name=author_name, is_deleted=False).first()
-    publisher = Publisher.query.filter_by(name=publisher_name, is_deleted=False).first()
+    author = Author.query.filter_by(name=author_name, is_deleted=False, is_archived=False).first()
+    publisher = Publisher.query.filter_by(name=publisher_name, is_deleted=False, is_archived=False).first()
     if not author:
-        author = Author(name=author_name, description="")
-        db.session.add(author)
+        raise ValueError("Choose an existing author or add the author in Catalog first")
     if not publisher:
-        publisher = Publisher(name=publisher_name, description="")
-        db.session.add(publisher)
-    db.session.flush()
+        raise ValueError("Choose an existing publisher or add the publisher in Catalog first")
     return author, publisher

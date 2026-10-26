@@ -14,6 +14,7 @@ from app import app, socketio  # noqa: E402
 from config import db  # noqa: E402
 from models.catalog.Author import Author  # noqa: E402
 from models.catalog.Publisher import Publisher  # noqa: E402
+from models.catalog.Category import Category  # noqa: E402
 from models.catalog.Book import Book  # noqa: E402
 from models.reviews.Review import Review  # noqa: E402
 from models.media.Media import Media  # noqa: E402
@@ -39,7 +40,13 @@ class SocialTests(unittest.TestCase):
         self.admin = User(user_name="admin", email="admin@example.test", password_digest="hash", is_active=True, is_admin=True)
         db.session.add_all([self.reader, self.other, self.admin])
         db.session.flush()
+        author = Author(name="Writer", description="")
+        publisher = Publisher(name="Press", description="")
+        general = Category(name="General", slug="general")
+        db.session.add_all([author, publisher, general])
+        db.session.flush()
         self.book = Book(title="A Book", slug="a-book", isbn="isbn", author="Writer", publisher="Press",
+                         author_id=author.author_id, publisher_id=publisher.publisher_id, categories=[general],
                          published_at=date(2020, 1, 1), price=5, added_by_user_id=self.admin.user_id)
         db.session.add(self.book)
         db.session.commit()
@@ -52,6 +59,31 @@ class SocialTests(unittest.TestCase):
 
     def headers(self, user):
         return {"Authorization": f"Bearer {create_token(user)}"}
+
+    def test_catalog_choices_categories_and_rankings(self):
+        admin_headers = self.headers(self.admin)
+        self.assertEqual(self.client.get("/api/authors?q=Writer&page=1&per_page=5").json["pagination"]["total"], 1)
+        self.assertEqual(self.client.get("/api/publishers?q=Press&page=1&per_page=5").json["pagination"]["total"], 1)
+        self.assertEqual(self.client.post("/api/categories", headers=self.headers(self.reader), json={"name": "Science"}).status_code, 403)
+        created = self.client.post("/api/categories", headers=admin_headers, json={"name": "Science"})
+        self.assertEqual(created.status_code, 201)
+        category_id = created.json["category"]["category_id"]
+        self.assertEqual(self.client.post("/api/categories", headers=admin_headers, json={"name": "Science"}).status_code, 409)
+        payload = {"title": "Science Book", "description": "Science for readers", "isbn": "science-isbn",
+                   "author": "Writer", "publisher": "Press", "category_ids": [category_id],
+                   "published_at": "2022-01-01", "price": 5, "copies_total": 2}
+        self.assertEqual(self.client.post("/api/book", headers=admin_headers,
+                         json={**payload, "author": "Missing"}).status_code, 400)
+        self.assertEqual(self.client.post("/api/book", headers=admin_headers,
+                         json={**payload, "category_ids": [99999]}).status_code, 400)
+        self.assertEqual(self.client.post("/api/book", headers=admin_headers, json=payload).status_code, 201)
+        filtered = self.client.get("/api/?category=science&sort=most_rated&per_page=5")
+        self.assertEqual([item["title"] for item in filtered.json["items"]], ["Science Book"])
+        self.assertEqual(self.client.get("/api/?category=science&sort=best_selling").status_code, 200)
+        ranked = self.client.get("/api/categories/top?sort=most_rated")
+        self.assertEqual(ranked.status_code, 200)
+        self.assertTrue(any(group["category"]["slug"] == "science" and group["books"][0]["title"] == "Science Book"
+                            for group in ranked.json["items"]))
 
     def test_review_includes_active_author_profile_picture(self):
         review = Review(user_id=self.reader.user_id, book_id=self.book.book_id, rating=5,

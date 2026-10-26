@@ -8,5 +8,6 @@ class AuthorDTO(BaseEntityDTO):
     author_id: int
     name: str
     description: str
+    address: str
     country: CountryDTO | None
     works: list[WorkDTO]

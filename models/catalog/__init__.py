@@ -1,1 +1,1 @@
-from . import Book, Country, Author, Publisher  # noqa: F401
+from . import Book, Country, Author, Publisher, Category  # noqa: F401

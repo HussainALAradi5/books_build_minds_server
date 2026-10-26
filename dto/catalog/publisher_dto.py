@@ -8,5 +8,6 @@ class PublisherDTO(BaseEntityDTO):
     publisher_id: int
     name: str
     description: str
+    address: str
     country: CountryDTO | None
     works: list[WorkDTO]

@@ -28,13 +28,13 @@ def get_author(author_id):
 
 def save_author():
     try:
-        name, description, code = catalog_values()
+        name, description, address, code = catalog_values()
     except ValueError as exc:
         return error(str(exc))
     if Author.query.filter_by(name=name).first():
         return error("Author already exists", 409)
     item = Author()
-    item.name, item.description, item.country_code = name, description, code
+    item.name, item.description, item.address, item.country_code = name, description, address, code
     db.session.add(item)
     db.session.commit()
     return success("Author saved", 201, author=item.to_dict())

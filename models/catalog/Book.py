@@ -7,6 +7,7 @@ from models.shared.BaseEntity import BaseEntity
 from dto.books.book_dto import BookDTO
 from dto.books.book_summary_dto import BookSummaryDTO
 from enums.books.book_status import BookStatus
+from models.catalog.Category import book_categories
 
 purchased_books_table = db.Table(
     "purchased_books",
@@ -37,6 +38,7 @@ class Book(BaseEntity, db.Model):
     added_by_user = relationship("User", back_populates="added_books")
     author_record = relationship("Author", back_populates="books")
     publisher_record = relationship("Publisher", back_populates="books")
+    categories = relationship("Category", secondary=book_categories, back_populates="books")
     purchased_by_users = relationship("User", secondary=purchased_books_table, back_populates="purchased_books")
     receipts = relationship("Receipt", backref="book", cascade="all, delete-orphan")
     reviews = relationship("Review", back_populates="book", cascade="all, delete-orphan")
@@ -67,6 +69,7 @@ class Book(BaseEntity, db.Model):
             "title": self.title,
             "author": self.author,
             "publisher": self.publisher,
+            "categories": [category.to_dict() for category in self.categories if not category.is_deleted and not category.is_archived],
             "published_at": self.published_at.isoformat(),
             "price": self.price,
             "copies_total": self.copies_total,

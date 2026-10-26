@@ -8,6 +8,7 @@ class BookInputDTO(TypedDict):
     isbn: str
     author: str
     publisher: str
+    category_ids: list[int]
     published_at: date
     price: float
     copies_total: int

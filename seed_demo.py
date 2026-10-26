@@ -9,10 +9,12 @@ from werkzeug.security import generate_password_hash
 from config import app, db
 from enums.accounts.account_role import AccountRole
 from models.catalog.Book import Book
+from models.catalog.Category import Category
 from models.accounts.User import User
 from utils.books.book_input import resolve_catalog_people
 from constants.demo_book_descriptions import DEMO_BOOK_DESCRIPTIONS
 from constants.demo_books import BOOKS, DEMO_BOOK_CONDITIONS, DEMO_BOOK_COPIES
+from constants.demo_categories import DEMO_CATEGORIES, DEMO_BOOK_CATEGORIES
 from services.catalog.demo_catalog_service import enrich_demo_catalog
 
 TEST_PASSWORDS = {
@@ -59,7 +61,14 @@ def seed_demo(reset_passwords: bool, test_accounts: bool):
     db.session.flush()
     admin = User.query.filter_by(email="demo-admin@example.test").one()
     enrich_demo_catalog()
+    for name in DEMO_CATEGORIES:
+        slug = name.lower().replace(" ", "-")
+        if Category.query.filter_by(slug=slug).first() is None:
+            db.session.add(Category(name=name, slug=slug))
+    db.session.flush()
+    categories = {item.name: item for item in Category.query.filter(Category.name.in_(DEMO_CATEGORIES)).all()}
     for title, isbn, author, publisher, published, price in BOOKS:
+        selected_categories = [categories[name] for name in DEMO_BOOK_CATEGORIES[isbn]]
         existing = Book.query.filter_by(isbn=isbn).first()
         if existing:
             if not existing.description:
@@ -69,10 +78,12 @@ def seed_demo(reset_passwords: bool, test_accounts: bool):
                 existing.author_id = author_record.author_id
             if existing.publisher_id is None:
                 existing.publisher_id = publisher_record.publisher_id
+            existing.categories = selected_categories
             continue
         author_record, publisher_record = resolve_catalog_people(author, publisher)
         db.session.add(Book(title=title, description=DEMO_BOOK_DESCRIPTIONS.get(isbn, ""), slug=title.lower().replace(" ", "-"), isbn=isbn, author=author,
             publisher=publisher, author_id=author_record.author_id, publisher_id=publisher_record.publisher_id,
+            categories=selected_categories,
             published_at=published, price=price,
             copies_total=DEMO_BOOK_COPIES.get(isbn, 1),
             condition=DEMO_BOOK_CONDITIONS.get(isbn, "good"),

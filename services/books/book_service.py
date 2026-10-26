@@ -6,6 +6,7 @@ from sqlalchemy.orm import selectinload
 
 from config import db
 from models.catalog.Book import Book
+from models.catalog.Category import Category
 from models.library.LibraryActivity import LibraryActivity
 from models.reviews.Review import Review
 from sqlalchemy.exc import IntegrityError
@@ -14,6 +15,8 @@ from utils.shared.responses import error, success
 from utils.shared.validation import clean_text, json_body, positive_price
 from enums.books.book_status import BookStatus
 from enums.library.library_action_type import LibraryActionType
+from utils.catalog.category_input import resolve_categories
+from utils.books.book_ranking import ranked_books
 from utils.books.book_events import emit_book_changed
 from utils.books.book_lookup import visible_book
 from utils.printing.book_codes import parse_barcode
@@ -23,7 +26,7 @@ from utils.shared.tabular import export_table, import_table
 
 
 def filtered_books(options, include_archived=False):
-    query = Book.query.filter_by(is_deleted=False).options(selectinload(Book.reviews), selectinload(Book.loans))
+    query = Book.query.filter_by(is_deleted=False).options(selectinload(Book.reviews), selectinload(Book.loans), selectinload(Book.categories))
     if not include_archived:
         query = query.filter_by(is_archived=False)
     term = clean_text(request.args.get("q"), 120)
@@ -33,6 +36,9 @@ def filtered_books(options, include_archived=False):
     publisher = clean_text(request.args.get("publisher"), 120)
     if publisher:
         query = query.filter(Book.publisher.ilike(publisher))
+    category = clean_text(request.args.get("category"), 120)
+    if category:
+        query = query.join(Book.categories).filter(Category.slug == category, Category.is_deleted.is_(False), Category.is_archived.is_(False))
     condition = request.args.get("condition")
     if condition:
         if condition not in {item.value for item in BookStatus}:
@@ -49,9 +55,8 @@ def filtered_books(options, include_archived=False):
             raise ValueError("max_price must be positive")
         query = query.filter(Book.price <= price)
     sort = request.args.get("sort", "recent")
-    if sort == "rating":
-        rating = db.session.query(Review.book_id, func.avg(Review.rating).label("score")).filter_by(is_deleted=False, is_archived=False).group_by(Review.book_id).subquery()
-        return order_query(query.outerjoin(rating, Book.book_id == rating.c.book_id), func.coalesce(rating.c.score, 0), options, Book.book_id)
+    if sort in ("rating", "most_rated", "best_selling"):
+        return ranked_books(query, "most_rated" if sort == "rating" else sort)
     if sort == "title":
         return order_query(query, Book.title, options, Book.book_id)
     if sort == "price":
@@ -121,8 +126,10 @@ def import_books():
                 if not slug:
                     raise ValueError("Title must contain letters or numbers")
                 author, publisher = resolve_catalog_people(values["author"], values["publisher"])
+                selected_categories = resolve_categories(values.pop("category_ids"))
                 book = Book(**values, slug=slug, author_id=author.author_id,
                             publisher_id=publisher.publisher_id, added_by_user_id=g.user.user_id)
+                book.categories = selected_categories
                 db.session.add(book)
                 db.session.flush()
                 imported.append(book.book_id)
@@ -178,8 +185,13 @@ def create_book():
     slug = slugify(values["title"])
     if not slug:
         return error("Title must contain letters or numbers")
-    author, publisher = resolve_catalog_people(values["author"], values["publisher"])
+    try:
+        author, publisher = resolve_catalog_people(values["author"], values["publisher"])
+        selected_categories = resolve_categories(values.pop("category_ids"))
+    except ValueError as exc:
+        return error(str(exc))
     book = Book(**values, slug=slug, author_id=author.author_id, publisher_id=publisher.publisher_id, added_by_user_id=g.user.user_id)
+    book.categories = selected_categories
     db.session.add(book)
     db.session.commit()
     return success("Book added", 201, book=book.to_dict())
